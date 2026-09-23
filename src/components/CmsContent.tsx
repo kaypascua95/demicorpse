@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import ReactMarkdown from 'react-markdown';
-import { cms, publicCms, type EntryInput } from '@/lib/cms';
+import { cms, entryTimestamp, publicCms, type Entry, type EntryInput } from '@/lib/cms';
 
 export function Media({ path, preview = false, alt = '' }: { path: string; preview?: boolean; alt?: string }) {
   const [url, setUrl] = useState('');
@@ -33,9 +33,10 @@ export function Markdown({ content }: { content: string }) {
   }}>{content}</ReactMarkdown></div>;
 }
 
-export function EntryView({ entry, preview = false }: { entry: EntryInput; preview?: boolean }) {
+export function EntryView({ entry, preview = false }: { entry: EntryInput | Entry; preview?: boolean }) {
+  const timestamp = 'created_at' in entry ? entryTimestamp(entry) : null;
   return <article className="cms-entry">
-    <header><p className="cms-eyebrow">{entry.collection} / <time dateTime={entry.date}>{entry.date}</time></p>
+    <header><p className="cms-eyebrow">{entry.collection} / <time dateTime={timestamp && "created_at" in entry ? (entry.published_at || entry.created_at) : entry.date}>{timestamp || entry.date}</time></p>
       {entry.title && <h1>{entry.title}</h1>}
       {entry.game && <p className="cms-muted">{entry.game}</p>}
       {entry.type && <p className="cms-muted">{entry.type}</p>}

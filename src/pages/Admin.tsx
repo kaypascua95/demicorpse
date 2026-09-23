@@ -3,6 +3,7 @@ import { EntryView, Media } from '@/components/CmsContent';
 import { client, cms, collections, editable, errorMessage, listEntries, mediaTypes, newEntry, removeMedia, saveEntry, slugify, uploadMedia, type Collection, type Entry, type EntryInput } from '@/lib/cms';
 import { SiteLink } from '@/lib/navigation';
 import OwnerMfa from '@/components/OwnerMfa';
+import { TraceAdmin } from '@/components/Traces';
 
 export default function Admin() {
   const [access, setAccess] = useState<'checking' | 'login' | 'denied' | 'mfa' | 'owner'>('checking');
@@ -12,10 +13,12 @@ export default function Admin() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [collection, setCollection] = useState<Collection>('journal');
+  const [adminSection, setAdminSection] = useState<'content'|'traces'>('content');
   const [entries, setEntries] = useState<Entry[]>([]);
   const [page, setPage] = useState(0);
   const [listLoading, setListLoading] = useState(false);
   const [revision, setRevision] = useState(0);
+  const [storageUsage, setStorageUsage] = useState<{storage_bytes:number;file_count:number}|null>(null);
   const [draft, setDraft] = useState<EntryInput | null>(null);
   const [savedEntry, setSavedEntry] = useState<Entry | null>(null);
   const [dirty, setDirty] = useState(false);
@@ -48,6 +51,11 @@ export default function Admin() {
     });
     return () => { alive = false; subscription.unsubscribe(); };
   }, []);
+
+  useEffect(() => {
+    if (access !== 'owner') return;
+    client().rpc('cms_storage_usage').then(({ data }) => { const row = Array.isArray(data) ? data[0] : data; if (row) setStorageUsage({ storage_bytes: Number(row.storage_bytes), file_count: Number(row.file_count) }); }).catch(() => {});
+  }, [access, revision]);
 
   useEffect(() => {
     if (access !== 'owner') return;
@@ -128,10 +136,10 @@ export default function Admin() {
   </label>;
 
   return <main className="inner-page cms-admin"><header className="cms-heading"><div><p className="cms-eyebrow">DEMICORPSE / PRIVATE</p><h1>Archive <em>control.</em></h1><p className="cms-muted">A place for the things you want to keep.</p></div>
-    {access === 'owner' && <button className="cms-button" disabled={busy} onClick={() => {
+    {access === 'owner' && <div className="cms-admin-meta">{storageUsage && <div className="cms-storage"><div><span>MEDIA STORAGE</span><strong>{(storageUsage.storage_bytes/1024/1024).toFixed(1)} MB <i>/ 1 GB</i></strong></div><div className="cms-storage-bar" aria-label={`${Math.min(100,storageUsage.storage_bytes/(1024*1024*1024)*100).toFixed(1)}% storage used`}><i style={{width:`${Math.max(1,Math.min(100,storageUsage.storage_bytes/(1024*1024*1024)*100))}%`}} /></div><small>{storageUsage.file_count} files · {(storageUsage.storage_bytes/(1024*1024*1024)*100).toFixed(1)}% used</small></div>}<button className="cms-button" disabled={busy} onClick={() => {
       if (dirty && !window.confirm('Sign out and discard unsaved changes?')) return;
       void run(async () => { const { error } = await client().auth.signOut(); if (error) throw error; });
-    }}>Sign out</button>}</header>
+    }}>Sign out</button></div>}</header>
     {error && <p className="cms-message cms-error" role="alert">{error}</p>}
     {notice && <p className="cms-message" role="status">{notice}</p>}
     {!cms ? <section className="cms-login"><h2>The archive is being connected.</h2><p>Publishing will be available here once your private account is ready.</p></section>
@@ -142,10 +150,10 @@ export default function Admin() {
         <label className="cms-field">Password<input type="password" autoComplete="current-password" required value={password} onChange={e => setPassword(e.target.value)} /></label>
         <button className="cms-button cms-primary" disabled={busy}>{busy ? 'Signing in…' : 'Sign in'}</button></form>
       : access === 'denied' ? <section className="cms-login"><h2>This room is private.</h2><p>Your account does not have publishing access.</p><button className="cms-button" onClick={() => void run(async () => { const { error } = await client().auth.signOut(); if (error) throw error; })}>Sign out</button></section>
-      : <><nav className="cms-tabs" aria-label="Collections">{collections.map(item => <button key={item} aria-current={collection === item ? 'page' : undefined} disabled={busy} onClick={() => {
+      : <><nav className="cms-tabs" aria-label="Admin sections"><button aria-current={adminSection === 'content' ? 'page' : undefined} onClick={() => setAdminSection('content')}>CONTENT</button><button aria-current={adminSection === 'traces' ? 'page' : undefined} onClick={() => setAdminSection('traces')}>TRACES</button></nav>{adminSection === 'traces' ? <TraceAdmin /> : <><nav className="cms-tabs" aria-label="Collections">{collections.map(item => <button key={item} aria-current={collection === item ? 'page' : undefined} disabled={busy} onClick={() => {
         if (dirty && !window.confirm('Discard unsaved changes?')) return;
         setCollection(item); setPage(0); setDraft(null); setSavedEntry(null); setDirty(false); setPreview(false); setError(''); setNotice('');
-      }}>{item}</button>)}</nav><div className="cms-workspace"><aside className="cms-sidebar"><button className="cms-button cms-primary" disabled={busy} onClick={() => choose(null)}>+ New {collection === 'fragments' ? 'fragment' : 'entry'}</button>
+      }}>{item}</button>)}</nav><div className="cms-workspace"><aside className="cms-sidebar"><button className="cms-button cms-primary" disabled={busy} onClick={() => choose(null)}>+ New {collection === 'fragments' ? 'fragment' : collection === 'gallery' ? 'photo' : 'entry'}</button>
         {listLoading ? <p role="status">Loading entries…</p> : !entries.length ? <p className="cms-muted">An empty room. Start with a draft.</p> : entries.map(entry => <button className="cms-list-item" key={entry.id} disabled={busy} aria-pressed={draft?.id === entry.id} onClick={() => choose(entry)}><span>{entry.status} / {entry.date}</span><strong>{entry.title || entry.content.slice(0, 65) || 'Untitled draft'}</strong></button>)}
         <div className="cms-pagination">{page > 0 && <button disabled={busy} className="cms-button" onClick={() => setPage(page - 1)}>Newer</button>}{entries.length === 20 && <button disabled={busy} className="cms-button" onClick={() => setPage(page + 1)}>Older</button>}</div>
       </aside><section className="cms-editor">{!draft ? <div className="cms-empty"><h2>Still <em>becoming.</em></h2><p>Choose an entry, or start something new.</p></div> : <>
@@ -155,10 +163,10 @@ export default function Admin() {
           <div className="cms-field-row">{fields('date', 'Date')}{collection !== 'fragments' && fields('slug', 'Address / slug', false, 180)}</div>
           {collection !== 'fragments' && <button type="button" className="cms-text-button" onClick={() => change('slug', slugify(draft.title) || draft.id)}>Use title for address</button>}
           {collection === 'journal' && <>{fields('excerpt', 'A few words before the entry', true, 2000)}{fields('quote', 'Pull quote / highlighted thought', true, 3000)}<label className="cms-field">Image layout<select value={draft.media_layout} onChange={e => change('media_layout', e.target.value)}><option value="full">Full width</option><option value="wide">Cinematic wide</option><option value="left">Wrap text — image left</option><option value="right">Wrap text — image right</option><option value="gallery">Gallery grid</option></select><small className="cms-muted">Controls how uploaded images are composed inside the journal entry.</small></label></>}
-          {collection === 'play' && fields('game', 'Game', false, 300)}
+          {collection === 'gallery' && <>{fields('excerpt', 'Caption / note', true, 2000)}<p className="cms-muted">Upload the photograph below. Use “Use as cover” to choose the image shown for this gallery entry. The title can be a place, moment, or short label.</p></>}\n          {collection === 'play' && fields('game', 'Game', false, 300)}
           {collection === 'archive' && fields('type', 'Type of memory', false, 100)}
-          {fields(collection === 'archive' ? 'description' : 'content', collection === 'fragments' ? 'Fragment' : 'Writing / Markdown', true, collection === 'archive' ? 20000 : 200000)}
-          {collection === 'journal' && <label className="cms-field">Tags / separated by commas<input value={draft.tags.join(',')} onChange={e => change('tags', e.target.value.split(',').slice(0, 30))} /></label>}
+          {collection !== 'gallery' && fields(collection === 'archive' ? 'description' : 'content', collection === 'fragments' ? 'Fragment' : 'Writing / Markdown', true, collection === 'archive' ? 20000 : 200000)}
+          {(collection === 'journal' || collection === 'fragments') && <label className="cms-field">Tags / separated by commas<input value={draft.tags.join(',')} onChange={e => change('tags', e.target.value.split(',').map(tag => tag.trim()).filter(Boolean).slice(0, 30))} /></label>}
           {collection === 'fragments' && <p className="cms-muted">A thought, a photograph, a little evidence. Add a few words as a caption, then attach what you want to keep.</p>}
           <section className="cms-uploads"><h3>{collection === 'journal' ? 'Journal images & media' : 'Media'}</h3><p className="cms-muted">Images, audio, and video · up to 25 MB each. Uploads automatically save a private draft.</p>
             <input ref={fileInput} type="file" aria-label="Upload media" accept={Object.keys(mediaTypes).join(',')} disabled={draft.media.length >= 30} onChange={e => { upload(e.target.files?.[0]); e.target.value = ''; }} />
@@ -189,6 +197,6 @@ export default function Admin() {
               setDraft(null); setSavedEntry(null); setDirty(false); setRevision(value => value + 1); setNotice('Entry deleted.');
             });
           }}>Delete entry</button></div>}
-      </>}</section></div></>}
+      </>}</section></div></>}</>}
   </main>;
 }

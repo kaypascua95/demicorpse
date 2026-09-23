@@ -78,3 +78,5 @@
 }
 
 .cms-mfa-qr{display:block;width:240px;max-width:100%;height:auto;background:white;padding:12px;margin:24px 0}.cms-mfa-setup code{display:block;overflow-wrap:anywhere;padding:16px 0}.cms-mfa-setup summary{cursor:pointer}
+
+.cms-admin-meta{display:flex;align-items:center;gap:18px}.cms-storage{width:min(250px,32vw)}.cms-storage>div:first-child{display:flex;justify-content:space-between;align-items:baseline;gap:12px}.cms-storage span,.cms-storage small{font:6px "DM Mono";letter-spacing:.13em;color:#777}.cms-storage strong{font:8px "DM Mono";font-weight:400;color:#d8d5cc;white-space:nowrap}.cms-storage strong i{font-style:normal;color:#666}.cms-storage-bar{height:3px;margin:7px 0;background:rgba(232,228,220,.12);overflow:hidden}.cms-storage-bar i{display:block;height:100%;min-width:2px;background:#8d9688;transition:width .4s ease}.cms-storage small{display:block;text-align:right}@media(max-width:700px){.cms-admin-meta{margin-top:18px;justify-content:space-between;align-items:flex-end}.cms-storage{width:min(230px,65vw)}}

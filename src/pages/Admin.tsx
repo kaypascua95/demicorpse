@@ -3,6 +3,7 @@ import { EntryView, Media } from '@/components/CmsContent';
 import { client, cms, collections, editable, errorMessage, listEntries, mediaTypes, newEntry, removeMedia, saveEntry, slugify, uploadMedia, type Collection, type Entry, type EntryInput } from '@/lib/cms';
 import { SiteLink } from '@/lib/navigation';
 import OwnerMfa from '@/components/OwnerMfa';
+import GalleryAdmin from '@/components/GalleryAdmin';
 
 export default function Admin() {
   const [access, setAccess] = useState<'checking' | 'login' | 'denied' | 'mfa' | 'owner'>('checking');
@@ -145,7 +146,7 @@ export default function Admin() {
       : <><nav className="cms-tabs" aria-label="Collections">{collections.map(item => <button key={item} aria-current={collection === item ? 'page' : undefined} disabled={busy} onClick={() => {
         if (dirty && !window.confirm('Discard unsaved changes?')) return;
         setCollection(item); setPage(0); setDraft(null); setSavedEntry(null); setDirty(false); setPreview(false); setError(''); setNotice('');
-      }}>{item}</button>)}</nav><div className="cms-workspace"><aside className="cms-sidebar"><button className="cms-button cms-primary" disabled={busy} onClick={() => choose(null)}>+ New {collection === 'fragments' ? 'fragment' : 'entry'}</button>
+      }}>{item}</button>)}<button aria-current={collection === 'gallery' as never ? 'page' : undefined} onClick={()=>{setCollection('gallery' as Collection);setDraft(null)}}>gallery</button></nav>{(collection as string)==='gallery'?<GalleryAdmin/>:<div className="cms-workspace"><aside className="cms-sidebar"><button className="cms-button cms-primary" disabled={busy} onClick={() => choose(null)}>+ New {collection === 'fragments' ? 'fragment' : 'entry'}</button>
         {listLoading ? <p role="status">Loading entries…</p> : !entries.length ? <p className="cms-muted">An empty room. Start with a draft.</p> : entries.map(entry => <button className="cms-list-item" key={entry.id} disabled={busy} aria-pressed={draft?.id === entry.id} onClick={() => choose(entry)}><span>{entry.status} / {entry.date}</span><strong>{entry.title || entry.content.slice(0, 65) || 'Untitled draft'}</strong></button>)}
         <div className="cms-pagination">{page > 0 && <button disabled={busy} className="cms-button" onClick={() => setPage(page - 1)}>Newer</button>}{entries.length === 20 && <button disabled={busy} className="cms-button" onClick={() => setPage(page + 1)}>Older</button>}</div>
       </aside><section className="cms-editor">{!draft ? <div className="cms-empty"><h2>Still <em>becoming.</em></h2><p>Choose an entry, or start something new.</p></div> : <>
@@ -189,6 +190,6 @@ export default function Admin() {
               setDraft(null); setSavedEntry(null); setDirty(false); setRevision(value => value + 1); setNotice('Entry deleted.');
             });
           }}>Delete entry</button></div>}
-      </>}</section></div></>}
+      </>}</section></div>}</>}
   </main>;
 }

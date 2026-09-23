@@ -2,9 +2,10 @@ import { useEffect, useRef, useState, type FormEvent } from 'react';
 import { EntryView, Media } from '@/components/CmsContent';
 import { client, cms, collections, editable, errorMessage, listEntries, mediaTypes, newEntry, removeMedia, saveEntry, slugify, uploadMedia, type Collection, type Entry, type EntryInput } from '@/lib/cms';
 import { SiteLink } from '@/lib/navigation';
+import OwnerMfa from '@/components/OwnerMfa';
 
 export default function Admin() {
-  const [access, setAccess] = useState<'checking' | 'login' | 'denied' | 'owner'>('checking');
+  const [access, setAccess] = useState<'checking' | 'login' | 'denied' | 'mfa' | 'owner'>('checking');
   const [error, setError] = useState('');
   const [notice, setNotice] = useState('');
   const [busy, setBusy] = useState(false);
@@ -30,10 +31,12 @@ export default function Admin() {
       try {
         const { data: { session }, error } = await client().auth.getSession();
         if (error) throw error;
-        const result = session ? await client().rpc('cms_is_owner') : null;
+        const identity = session ? await client().rpc('cms_is_owner_account') : null;
+        if (identity?.error) throw identity.error;
+        const result = identity?.data === true ? await client().rpc('cms_is_owner') : null;
         if (result?.error) throw result.error;
         if (!alive || generation !== authGeneration.current) return;
-        const next = !session ? 'login' : result?.data === true ? 'owner' : 'denied';
+        const next = !session ? 'login' : identity?.data !== true ? 'denied' : result?.data === true ? 'owner' : 'mfa';
         setAccess(next);
         if (next !== 'owner') { setDraft(null); setSavedEntry(null); setEntries([]); setDirty(false); }
       } catch (error) { if (alive) { setAccess('login'); setError(errorMessage(error)); } }
@@ -121,6 +124,7 @@ export default function Admin() {
     {notice && <p className="cms-message" role="status">{notice}</p>}
     {!cms ? <section className="cms-login"><h2>The archive is being connected.</h2><p>Publishing will be available here once your private account is ready.</p></section>
       : access === 'checking' ? <p role="status">Checking your account…</p>
+      : access === 'mfa' ? <OwnerMfa />
       : access === 'login' ? <form className="cms-login" onSubmit={login}><h2>Welcome back.</h2><p className="cms-muted">Sign in to tend your archive.</p>
         <label className="cms-field">Email<input type="email" autoComplete="username" required value={email} onChange={e => setEmail(e.target.value)} /></label>
         <label className="cms-field">Password<input type="password" autoComplete="current-password" required value={password} onChange={e => setPassword(e.target.value)} /></label>

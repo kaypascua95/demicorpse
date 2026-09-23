@@ -4,7 +4,7 @@ import { EntryView } from '@/components/CmsContent';
 import FragmentFeed from '@/components/FragmentFeed';
 import FragmentComposer from '@/components/FragmentComposer';
 import { client } from '@/lib/cms';
-import { errorMessage, listEntries, publicCms, type Collection, type Entry } from '@/lib/cms';
+import { entryTimestamp, errorMessage, listEntries, publicCms, type Collection, type Entry } from '@/lib/cms';
 import { SiteLink } from '@/lib/navigation';
 
 const copy = {
@@ -53,7 +53,7 @@ export default function CollectionPage({ collection, slug }: { collection: Colle
   const [label, first, second, note] = copy[collection];
   return <main className="inner-page"><header className="page-head"><span>{label}</span><h1>{first}<br /><em>{second}</em></h1><p>{note}</p></header>
     {collection === 'fragments' ? <>{owner && <FragmentComposer onPublished={entry => { setEntries(current => [entry, ...current.filter(item => item.id !== entry.id)]); setPage(0); }} />}<FragmentFeed entries={entries} /></> : <section className="entry-index">{entries.map(entry => <SiteLink key={entry.id} href={`/${collection}/${entry.slug}`}>
-      <time dateTime={entry.date}>{entry.date}</time><div><strong>{entry.title}</strong>{entry.excerpt && <p className="cms-muted">{entry.excerpt}</p>}</div><span>{entry.game || entry.type || collection} →</span>
+      <time dateTime={entry.published_at || entry.created_at}>{entryTimestamp(entry)}</time><div><strong>{entry.title}</strong>{entry.excerpt && <p className="cms-muted">{entry.excerpt}</p>}</div><span>{entry.game || entry.type || collection} →</span>
     </SiteLink>)}</section>}
     <nav className="cms-pagination" aria-label="Entries">{page > 0 && <button className="cms-button" onClick={() => setPage(page - 1)}>← Newer</button>}
       {more && <button className="cms-button" onClick={() => setPage(page + 1)}>Older →</button>}</nav>

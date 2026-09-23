@@ -162,3 +162,62 @@
   .global-header .primary-nav{gap:clamp(18px,3vw,36px)!important}
   .global-header .more-trigger{min-width:108px!important;padding-inline:15px!important}
 }
+
+
+/* Header v3: deterministic nav layout; no Tailwind utility collision on More */
+.global-header{
+  display:grid!important;
+  grid-template-columns:minmax(110px,1fr) auto minmax(110px,1fr)!important;
+  align-items:center!important;
+  column-gap:clamp(20px,4vw,64px)!important;
+  min-height:72px!important;
+  padding:0 clamp(24px,4vw,64px)!important;
+  overflow:visible!important;
+}
+.global-header .main-logo{justify-self:start!important}
+.global-header .primary-nav{
+  justify-self:center!important;
+  display:flex!important;
+  align-items:center!important;
+  gap:clamp(28px,4vw,58px)!important;
+}
+.global-header .primary-nav button,
+.global-header .more-trigger{
+  font:400 8px/1 "DM Mono",monospace!important;
+  letter-spacing:.2em!important;
+}
+.global-header>.more-nav{
+  justify-self:end!important;
+  position:relative!important;
+  display:block!important;
+  overflow:visible!important;
+}
+.global-header .more-trigger{
+  position:relative!important;
+  display:inline-flex!important;
+  align-items:center!important;
+  justify-content:center!important;
+  gap:12px!important;
+  width:auto!important;
+  min-width:112px!important;
+  height:38px!important;
+  margin:0!important;
+  padding:0 18px!important;
+  border:1px solid rgba(232,228,220,.45)!important;
+  border-radius:999px!important;
+  overflow:hidden!important;
+  background:rgba(11,11,12,.1)!important;
+  color:#e8e4dc!important;
+  white-space:nowrap!important;
+  cursor:pointer!important;
+  box-sizing:border-box!important;
+  transition:background .35s ease,color .35s ease,border-radius .35s ease!important;
+}
+.global-header .more-trigger:hover{background:#e8e4dc!important;color:#0b0b0c!important;border-radius:12px!important}
+.global-header .more-trigger svg{display:block!important;width:13px!important;height:13px!important;flex:0 0 13px!important;stroke-width:1.5!important}
+@media(max-width:820px){
+ .global-header{display:flex!important;justify-content:space-between!important;min-height:64px!important;padding:0 5vw!important}
+ .global-header .primary-nav{display:none!important}
+ .global-header>.more-nav{margin-left:auto!important}
+ .global-header .more-trigger{min-width:104px!important;height:36px!important;padding:0 15px!important}
+}

@@ -152,6 +152,34 @@ test('Fragments, Play and Archive use their own fields and can save drafts',asyn
 });
 
 
+test('fragment media stays in drafts until published and opens from the visual feed', async ({page}, info) => {
+  const {records} = await mockService(page); await login(page);
+  await page.getByRole('navigation',{name:'Collections'}).getByRole('button',{name:'fragments',exact:true}).click();
+  await page.getByRole('button',{name:'+ New fragment'}).click();
+  await page.getByLabel('Fragment',{exact:true}).fill('A small **memory**, worth keeping.');
+  await page.getByRole('button',{name:'Save draft',exact:true}).click();
+  await expect(page.locator('.cms-message[role=status]')).toContainText('Draft saved');
+  await page.getByLabel('Upload media').setInputFiles({name:'memory.png',mimeType:'image/png',buffer:png});
+  await expect(page.locator('.cms-message[role=status]')).toHaveText('Media uploaded and saved.');
+  await page.goto('/fragments/');
+  await expect(page.locator('.fragment-card')).toHaveCount(0);
+  await page.goto('/admin');
+  await page.getByRole('navigation',{name:'Collections'}).getByRole('button',{name:'fragments',exact:true}).click();
+  await page.locator('.cms-list-item').click();
+  await page.getByRole('button',{name:'Publish',exact:true}).click();
+  await expect(page.locator('.cms-message[role=status]')).toContainText('Published.');
+  await page.goto('/fragments/');
+  await expect(page.locator('.fragment-card .cms-media')).toBeVisible();
+  await expect(page.locator('.fragment-card strong')).toHaveText('memory');
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
+  await page.screenshot({path:info.outputPath('fragments.png'),fullPage:true});
+  const video = await page.locator('#persistent-video').elementHandle();
+  await page.locator('.fragment-card footer a').click();
+  await expect(page).toHaveURL(new RegExp(`/fragments/${records[0].slug}$`));
+  await expect(page.locator('.cms-entry .cms-media')).toBeVisible();
+  expect(await video?.evaluate(node => node === document.querySelector('#persistent-video'))).toBe(true);
+});
+
 test('MFA enrollment and invalid code keep the editor locked until verification', async ({page}) => {
   await mockService(page, true, false); await login(page, false);
   await expect(page.getByRole('button', {name: '+ New entry'})).toHaveCount(0);

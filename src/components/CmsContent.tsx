@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import ReactMarkdown from 'react-markdown';
 import { cms, publicCms, type EntryInput } from '@/lib/cms';
 
-export function Media({ path, preview = false }: { path: string; preview?: boolean }) {
+export function Media({ path, preview = false, alt = '' }: { path: string; preview?: boolean; alt?: string }) {
   const [url, setUrl] = useState('');
   const [failed, setFailed] = useState(false);
   useEffect(() => {
@@ -20,7 +20,7 @@ export function Media({ path, preview = false }: { path: string; preview?: boole
   if (!url) return <p className="cms-muted" role="status">Loading media…</p>;
   if (/\.(mp4|webm)$/.test(path)) return <video className="cms-media" controls preload="metadata" src={url} />;
   if (/\.(mp3|ogg)$/.test(path)) return <audio className="cms-media" controls preload="metadata" src={url} />;
-  return <img className="cms-media" src={url} alt="" loading="lazy" />;
+  return <img className="cms-media" src={url} alt={alt} loading="lazy" />;
 }
 
 export function Markdown({ content }: { content: string }) {

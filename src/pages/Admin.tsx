@@ -147,7 +147,8 @@ export default function Admin() {
           {collection === 'archive' && fields('type', 'Type of memory', false, 100)}
           {fields(collection === 'archive' ? 'description' : 'content', collection === 'fragments' ? 'Fragment' : 'Writing / Markdown', true, collection === 'archive' ? 20000 : 200000)}
           {collection === 'journal' && <label className="cms-field">Tags / separated by commas<input value={draft.tags.join(',')} onChange={e => change('tags', e.target.value.split(',').slice(0, 30))} /></label>}
-          {collection !== 'fragments' && <section className="cms-uploads"><h3>Media</h3><p className="cms-muted">Images, audio, and video · up to 25 MB each. Save a draft before uploading. Uploads save your current edits.</p>
+          {collection === 'fragments' && <p className="cms-muted">A thought, a photograph, a little evidence. Add a few words as a caption, then attach what you want to keep.</p>}
+          <section className="cms-uploads"><h3>Media</h3><p className="cms-muted">Images, audio, and video · up to 25 MB each. Save a draft before uploading. Uploads save your current edits.</p>
             <input ref={fileInput} type="file" aria-label="Upload media" accept={Object.keys(mediaTypes).join(',')} disabled={!savedEntry || draft.media.length >= 30} onChange={e => { upload(e.target.files?.[0]); e.target.value = ''; }} />
             {draft.media.map(path => <div className="cms-upload" key={path}><Media path={path} preview /><div className="cms-actions">
               {/\.(jpg|png|webp|gif)$/.test(path) && <button type="button" className="cms-button" onClick={() => change('cover_image', draft.cover_image === path ? null : path)}>{draft.cover_image === path ? 'Remove cover' : 'Use as cover'}</button>}
@@ -155,7 +156,7 @@ export default function Admin() {
                 if (!window.confirm('Permanently remove this media? This also saves your current edits.')) return;
                 void run(async () => { await persist({ ...draft, cover_image: draft.cover_image === path ? null : draft.cover_image, media: draft.media.filter(item => item !== path) }); await removeMedia([path]); setNotice('Media removed.'); });
               }}>Delete media</button></div></div>)}
-          </section>}
+          </section>
           <div className="cms-actions"><button className="cms-button cms-primary" type="submit">{busy ? 'Saving…' : draft.status === 'published' ? 'Save published changes' : 'Save draft'}</button>
             {draft.status === 'draft' && <button className="cms-button" type="button" onClick={() => save('published')}>Publish</button>}
             {draft.status === 'published' && <button className="cms-button" type="button" onClick={() => { if (window.confirm('Unpublish this entry? It will become a private draft.')) save('draft'); }}>Unpublish</button>}

@@ -18,7 +18,9 @@ from a dedicated Supabase project. Empty collections retain Coming Soon.
    load/navigation; no code change or deployment is required for posts.
 
 Published entries support **Save published changes**, **Unpublish** (returns them to
-private drafts), and confirmed permanent deletion. Fragments use just writing/date;
+private drafts), and confirmed permanent deletion. Fragments use writing/date and optional
+photos, audio, or video; add a short caption before publishing. The public Fragments
+feed shows the cover (or first attachment), with a link to the complete entry.
 Play adds a game; Archive adds type/description. Close the tab or Sign out to end
 the tab-scoped session. Account recovery is handled by the Supabase project administrator.
 

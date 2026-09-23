@@ -4,7 +4,7 @@ export const collections = ['journal', 'fragments', 'play', 'archive'] as const;
 export type Collection = typeof collections[number];
 export type Entry = {
   id: string; collection: Collection; title: string; slug: string; excerpt: string;
-  content: string; game: string; type: string; description: string; quote: string; media_layout: 'full'|'left'|'right'|'wide'|'gallery';
+  content: string; game: string; type: string; description: string; quote: string; video_url: string; duration: string; featured: boolean; media_layout: 'full'|'left'|'right'|'wide'|'gallery';
   cover_image: string | null; media: string[]; date: string;
   status: 'draft' | 'published'; tags: string[]; published_at: string | null;
   created_at: string; updated_at: string;
@@ -27,7 +27,7 @@ export function client() {
 export function newEntry(collection: Collection): EntryInput {
   const id = crypto.randomUUID();
   return { id, collection, title: '', slug: id, excerpt: '', content: '', game: '', type: '',
-    description: '', quote: '', media_layout: 'full', cover_image: null, media: [], date: new Date().toLocaleDateString('en-CA'),
+    description: '', quote: '', video_url: '', duration: '', featured: false, media_layout: 'full', cover_image: null, media: [], date: new Date().toLocaleDateString('en-CA'),
     status: 'draft', tags: [] };
 }
 export function slugify(title: string) {

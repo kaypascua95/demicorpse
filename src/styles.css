@@ -97,3 +97,12 @@
  .mobile-all-links .more-dropdown-link>span{font:6px "DM Mono"!important;letter-spacing:.14em!important}
  .more-dropdown-foot{margin-top:5vh;padding-top:20px;border-top:1px solid rgba(232,228,220,.1)}
 }
+
+/* Mobile nav hard override: global header rules previously hid every nested nav. */
+@media(max-width:820px){
+ .global-header .more-nav{display:block!important;position:relative!important}
+ .global-header .more-nav .more-dropdown{display:block!important;visibility:visible!important;opacity:1}
+ .global-header .more-nav nav.dc-desktop-menu{display:none!important}
+ .global-header .more-nav nav.dc-mobile-menu{display:flex!important;flex-direction:column!important;align-items:stretch!important;gap:0!important;width:100%!important}
+ .global-header .more-nav nav.dc-mobile-menu>a{display:grid!important;visibility:visible!important;opacity:1;grid-template-columns:34px minmax(0,1fr)!important;width:100%!important}
+}

@@ -57,6 +57,18 @@
 .cms-tags { font:10px/1.8 "DM Mono",monospace;color:#a7a7a7;margin-top:45px; }
 .cms-pagination { display:flex;gap:12px;margin-top:30px; }
 .cms-back { color:#c5c3bc;font:11px "DM Mono",monospace;text-transform:uppercase;letter-spacing:.1em; }
+.fragment-feed { columns:2;column-gap:clamp(28px,6vw,90px);margin-top:10vh; }
+.fragment-card { break-inside:avoid;display:inline-block;width:100%;margin:0 0 64px;border-top:1px solid #55544f;padding-top:18px;overflow-wrap:anywhere; }
+.fragment-card header,.fragment-card footer { display:flex;justify-content:space-between;gap:16px;flex-wrap:wrap;font:10px/1.7 "DM Mono",monospace;color:#aaa9a2; }
+.fragment-card header { text-transform:uppercase;letter-spacing:.09em; }
+.fragment-card .cms-prose { font:400 clamp(24px,2.6vw,38px)/1.45 "Playfair Display",serif; }
+.fragment-card-media .cms-prose { font-size:clamp(21px,2vw,28px); }
+.fragment-card .cms-media { margin:24px 0; }
+.fragment-card img.cms-media { max-height:650px;object-fit:contain;object-position:left; }
+.fragment-card footer { margin-top:26px;align-items:center; }
+.fragment-card footer a { display:inline-flex;align-items:center;min-height:44px;color:#e8e4dc;text-decoration:underline;text-underline-offset:5px; }
+.fragment-card a:focus-visible { outline:2px solid #dad9c3;outline-offset:4px; }
+@media(max-width:760px) { .fragment-feed { columns:1; }.fragment-card { margin-bottom:40px; } }
 @media(max-width:760px) {
  .cms-heading { display:block;margin-bottom:30px; }.cms-heading>button { margin-top:15px; }
  .cms-workspace { grid-template-columns:1fr;gap:30px; }.cms-sidebar { border-right:0;border-bottom:1px solid #3a3a3c;padding:0 0 24px; }

@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import ComingSoon from './ComingSoon';
-import { EntryView, Markdown } from '@/components/CmsContent';
+import { EntryView } from '@/components/CmsContent';
+import FragmentFeed from '@/components/FragmentFeed';
 import { errorMessage, listEntries, publicCms, type Collection, type Entry } from '@/lib/cms';
 import { SiteLink } from '@/lib/navigation';
 
@@ -42,9 +43,7 @@ export default function CollectionPage({ collection, slug }: { collection: Colle
   if (!entries.length && page === 0) return <ComingSoon page={collection} />;
   const [label, first, second, note] = copy[collection];
   return <main className="inner-page"><header className="page-head"><span>{label}</span><h1>{first}<br /><em>{second}</em></h1><p>{note}</p></header>
-    {collection === 'fragments' ? <section className="fragment-index">{entries.map(entry => <article key={entry.id}>
-      <time dateTime={entry.date}>{entry.date}</time><Markdown content={entry.content} />
-    </article>)}</section> : <section className="entry-index">{entries.map(entry => <SiteLink key={entry.id} href={`/${collection}/${entry.slug}`}>
+    {collection === 'fragments' ? <FragmentFeed entries={entries} /> : <section className="entry-index">{entries.map(entry => <SiteLink key={entry.id} href={`/${collection}/${entry.slug}`}>
       <time dateTime={entry.date}>{entry.date}</time><div><strong>{entry.title}</strong>{entry.excerpt && <p className="cms-muted">{entry.excerpt}</p>}</div><span>{entry.game || entry.type || collection} →</span>
     </SiteLink>)}</section>}
     <nav className="cms-pagination" aria-label="Entries">{page > 0 && <button className="cms-button" onClick={() => setPage(page - 1)}>← Newer</button>}

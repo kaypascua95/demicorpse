@@ -1,6 +1,6 @@
 import { createClient } from '@supabase/supabase-js';
 
-export const collections = ['journal', 'fragments', 'play', 'archive'] as const;
+export const collections = ['journal', 'fragments', 'gallery', 'play', 'archive'] as const;
 export type Collection = typeof collections[number];
 export type Entry = {
   id: string; collection: Collection; title: string; slug: string; excerpt: string;

@@ -6,6 +6,7 @@ import FragmentComposer from '@/components/FragmentComposer';
 import { client } from '@/lib/cms';
 import { entryTimestamp, errorMessage, listEntries, publicCms, type Collection, type Entry } from '@/lib/cms';
 import { SiteLink } from '@/lib/navigation';
+import { SqueezeCarousel, type SqueezeSlide } from '@/components/ui/carousel-squeeze';
 
 const copy = {
   journal: ['01 / JOURNAL', 'Things I wanted', 'to remember.', 'Longer thoughts, stories, and the things that refused to stay in my head.'],
@@ -13,6 +14,10 @@ const copy = {
   play: ['05 / PLAY', 'The other lives', 'I live.', 'Games, streams, late nights, screenshots, and The Graveyard.'],
   archive: ['ARCHIVE', 'Everything', 'kept.', 'A chronological record of whatever survived long enough to end up here.'],
 };
+function JournalSqueeze({entries}:{entries:Entry[]}) {
+  const slides:SqueezeSlide[]=entries.slice(0,7).map(entry=>({id:entry.id,title:entry.title,description:entry.excerpt||entry.quote||'Open the journal entry.',href:`/journal/${entry.slug}`,action:'Read entry',overlay:<span>{entryTimestamp(entry)}</span>,image:undefined}));
+  return <section className="journal-featured"><p className="cms-eyebrow">FROM THE JOURNAL</p><SqueezeCarousel slides={slides} label="Journal entries"/></section>;
+}
 export default function CollectionPage({ collection, slug }: { collection: Collection; slug?: string }) {
   const [entries, setEntries] = useState<Entry[]>([]);
   const [page, setPage] = useState(0);
@@ -52,6 +57,7 @@ export default function CollectionPage({ collection, slug }: { collection: Colle
   if (!entries.length && page === 0 && collection !== 'fragments') return <ComingSoon page={collection} />;
   const [label, first, second, note] = copy[collection];
   return <main className="inner-page"><header className="page-head"><span>{label}</span><h1>{first}<br /><em>{second}</em></h1><p>{note}</p></header>
+    {collection === 'journal' && entries.length > 0 && <JournalSqueeze entries={entries} />}
     {collection === 'fragments' ? <>{owner && <FragmentComposer onPublished={entry => { setEntries(current => [entry, ...current.filter(item => item.id !== entry.id)]); setPage(0); }} />}<FragmentFeed entries={entries} /></> : <section className="entry-index">{entries.map(entry => <SiteLink key={entry.id} href={`/${collection}/${entry.slug}`}>
       <time dateTime={entry.published_at || entry.created_at}>{entryTimestamp(entry)}</time><div><strong>{entry.title}</strong>{entry.excerpt && <p className="cms-muted">{entry.excerpt}</p>}</div><span>{entry.game || entry.type || collection} →</span>
     </SiteLink>)}</section>}

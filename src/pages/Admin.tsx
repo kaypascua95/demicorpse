@@ -4,6 +4,8 @@ import { client, cms, collections, editable, errorMessage, listEntries, mediaTyp
 import { SiteLink } from '@/lib/navigation';
 import OwnerMfa from '@/components/OwnerMfa';
 import GalleryAdmin from '@/components/GalleryAdmin';
+import { ImageIcon, X } from 'lucide-react';
+import { useFileUpload } from '@/components/ui/file-upload';
 
 export default function Admin() {
   const [access, setAccess] = useState<'checking' | 'login' | 'denied' | 'mfa' | 'owner'>('checking');
@@ -22,6 +24,7 @@ export default function Admin() {
   const [dirty, setDirty] = useState(false);
   const [preview, setPreview] = useState(false);
   const fileInput = useRef<HTMLInputElement>(null);
+  const [{files: cleanFiles, errors: cleanErrors},{removeFile: removeCleanFile, openFileDialog: openCleanDialog, getInputProps: cleanInputProps, handleDragEnter: cleanDragEnter, handleDragLeave: cleanDragLeave, handleDragOver: cleanDragOver, handleDrop: cleanDrop, clearFiles: clearCleanFiles}] = useFileUpload({accept:'image/*',maxSize:25*1024*1024});
   const authGeneration = useRef(0);
 
   useEffect(() => {
@@ -113,7 +116,7 @@ export default function Admin() {
         setSavedEntry(result); setDraft(editable(result)); setDirty(false);
         setRevision(value => value + 1);
       } catch (error) { await removeMedia([path]).catch(() => {}); throw error; }
-      setNotice('Media uploaded and saved.');
+      setNotice('Media uploaded and saved.'); clearCleanFiles();
     });
   }
   async function login(event: FormEvent) {
@@ -162,7 +165,7 @@ export default function Admin() {
           {collection === 'journal' && <label className="cms-field">Tags / separated by commas<input value={draft.tags.join(',')} onChange={e => change('tags', e.target.value.split(',').slice(0, 30))} /></label>}
           {collection === 'fragments' && <p className="cms-muted">A thought, a photograph, a little evidence. Add a few words as a caption, then attach what you want to keep.</p>}
           <section className="cms-uploads"><h3>{collection === 'journal' ? 'Journal images & media' : 'Media'}</h3><p className="cms-muted">Images, audio, and video · up to 25 MB each. Uploads automatically save a private draft.</p>
-            <input ref={fileInput} type="file" aria-label="Upload media" accept={Object.keys(mediaTypes).join(',')} disabled={draft.media.length >= 30} onChange={e => { upload(e.target.files?.[0]); e.target.value = ''; }} />
+            {(collection === 'journal' || collection === 'fragments') && <div className="gallery-upload-clean" onDragEnter={cleanDragEnter} onDragLeave={cleanDragLeave} onDragOver={cleanDragOver} onDrop={cleanDrop}>{cleanFiles[0]?.preview?<div className="gallery-upload-preview"><img src={cleanFiles[0].preview} alt="Selected image"/><button type="button" onClick={()=>removeCleanFile(cleanFiles[0].id)} aria-label="Remove image"><X size={16}/></button><button type="button" className="gallery-change" onClick={openCleanDialog}>Change image</button><button type="button" className="gallery-use-image" onClick={()=>upload(cleanFiles[0].file)}>Add image</button></div>:<button type="button" className="gallery-upload-empty" onClick={openCleanDialog}><ImageIcon size={20}/><span>Add image</span><small>or drop an image here · max 25 MB</small></button>}<input {...cleanInputProps()} hidden aria-label="Choose image"/>{cleanErrors.map(x=><p className="cms-error" key={x}>{x}</p>)}</div>}<input ref={fileInput} type="file" aria-label="Upload media" accept={Object.keys(mediaTypes).join(',')} disabled={draft.media.length >= 30} onChange={e => { upload(e.target.files?.[0]); e.target.value = ''; }} />
             {draft.media.map(path => <div className="cms-upload" key={path}><Media path={path} preview /><div className="cms-actions">
               {/\.(jpg|png|webp|gif)$/.test(path) && <button type="button" className="cms-button" onClick={() => change('cover_image', draft.cover_image === path ? null : path)}>{draft.cover_image === path ? 'Remove cover' : 'Use as cover'}</button>}
               <button type="button" className="cms-button" onClick={() => {

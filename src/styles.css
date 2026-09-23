@@ -221,3 +221,14 @@
  .global-header>.more-nav{margin-left:auto!important}
  .global-header .more-trigger{min-width:104px!important;height:36px!important;padding:0 15px!important}
 }
+
+
+/* Fragments archive controls + chronological view */
+.fragment-controls{max-width:980px;margin:7vh auto 0;padding:18px 0;border-top:1px solid rgba(232,228,220,.14);border-bottom:1px solid rgba(232,228,220,.14)}
+.fragment-view-toggle{display:flex;gap:8px;margin-bottom:16px}.fragment-view-toggle button{border:1px solid rgba(232,228,220,.2);background:transparent;color:#a7a7a7;padding:9px 13px;font:7px "DM Mono";letter-spacing:.16em;cursor:pointer}.fragment-view-toggle button[aria-pressed=true]{background:#e8e4dc;color:#111}
+.fragment-filters{display:grid;grid-template-columns:repeat(5,minmax(105px,1fr)) minmax(170px,1.5fr);gap:10px}.fragment-filters label{font:6px "DM Mono";letter-spacing:.15em;color:#777;text-transform:uppercase}.fragment-filters select,.fragment-filters input{display:block;width:100%;height:38px;margin-top:7px;border:1px solid rgba(232,228,220,.16);background:rgba(11,11,12,.55);color:#d8d5cc;padding:0 10px;font:10px Inter}.fragment-controls>p{margin:13px 0 0;font:6px "DM Mono";letter-spacing:.14em;color:#777}
+.fragment-card-tags{display:flex;flex-wrap:wrap;gap:6px;margin-top:12px}.fragment-card-tags span{font:6px "DM Mono";letter-spacing:.1em;color:#8d9688}
+.fragment-chronology{max-width:980px;margin:6vh auto 10vh}.fragment-chronology>section{margin-bottom:7vh}.fragment-chronology h2{margin:0 0 14px;font:8px "DM Mono";letter-spacing:.22em;color:#8d9688}
+.fragment-timeline-row{display:grid;grid-template-columns:120px minmax(0,1fr) 20px;gap:24px;align-items:start;padding:20px 0;border-top:1px solid rgba(232,228,220,.12);color:inherit;text-decoration:none}.fragment-timeline-row time{font:7px "DM Mono";letter-spacing:.1em;color:#777}.fragment-timeline-row .cms-prose{margin:0;font:400 16px/1.55 "Playfair Display"}.fragment-timeline-row .cms-prose p{margin:0}.fragment-timeline-row small{display:block;margin-top:8px;font:6px "DM Mono";letter-spacing:.1em;color:#8d9688}.fragment-timeline-row>span{color:#777}
+@media(max-width:760px){.fragment-controls{margin-top:5vh}.fragment-filters{grid-template-columns:1fr 1fr}.fragment-search{grid-column:1/-1}.fragment-timeline-row{grid-template-columns:82px minmax(0,1fr) 14px;gap:12px}.fragment-timeline-row .cms-prose{font-size:14px}}
+@media(max-width:420px){.fragment-filters{grid-template-columns:1fr}.fragment-search{grid-column:auto}.fragment-timeline-row{grid-template-columns:1fr 14px}.fragment-timeline-row time{grid-column:1/-1}}

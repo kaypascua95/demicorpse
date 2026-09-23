@@ -29,7 +29,7 @@ export default function CollectionPage({ collection, slug }: { collection: Colle
   useEffect(() => {
     if (collection !== 'fragments') return;
     let alive = true;
-    client().rpc('cms_is_owner').then(({ data }) => { if (alive) setOwner(data === true); }).catch(() => {});
+    void (async () => { try { const { data } = await client().rpc('cms_is_owner'); if (alive) setOwner(data === true); } catch {} })();
     return () => { alive = false; };
   }, [collection]);
   useEffect(() => {

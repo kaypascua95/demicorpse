@@ -42,9 +42,16 @@ export function EntryView({ entry, preview = false }: { entry: EntryInput | Entr
       {entry.type && <p className="cms-muted">{entry.type}</p>}
       {entry.excerpt && <p className="cms-excerpt">{entry.excerpt}</p>}
     </header>
-    {entry.cover_image && <Media path={entry.cover_image} preview={preview} />}
-    <Markdown content={entry.collection === 'archive' ? entry.description : entry.content} />
-    {entry.media.filter(path => path !== entry.cover_image).map(path => <Media key={path} path={path} preview={preview} />)}
+    {entry.collection === 'journal' ? <div className={`journal-story journal-layout-${entry.media_layout || 'full'}`}>
+      {entry.cover_image && <div className="journal-lead-media"><Media path={entry.cover_image} preview={preview} /></div>}
+      {entry.quote && <blockquote className="journal-pullquote">“{entry.quote}”</blockquote>}
+      <div className="journal-story-copy"><Markdown content={entry.content} /></div>
+      {!!entry.media.filter(path => path !== entry.cover_image).length && <div className="journal-secondary-media">{entry.media.filter(path => path !== entry.cover_image).map(path => <Media key={path} path={path} preview={preview} />)}</div>}
+    </div> : <>
+      {entry.cover_image && <Media path={entry.cover_image} preview={preview} />}
+      <Markdown content={entry.collection === 'archive' ? entry.description : entry.content} />
+      {entry.media.filter(path => path !== entry.cover_image).map(path => <Media key={path} path={path} preview={preview} />)}
+    </>}
     {!!entry.tags.length && <p className="cms-tags">{entry.tags.join(' / ')}</p>}
   </article>;
 }

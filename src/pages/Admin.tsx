@@ -18,6 +18,7 @@ export default function Admin() {
   const [page, setPage] = useState(0);
   const [listLoading, setListLoading] = useState(false);
   const [revision, setRevision] = useState(0);
+  const [storageUsage, setStorageUsage] = useState<{storage_bytes:number;file_count:number}|null>(null);
   const [draft, setDraft] = useState<EntryInput | null>(null);
   const [savedEntry, setSavedEntry] = useState<Entry | null>(null);
   const [dirty, setDirty] = useState(false);
@@ -50,6 +51,11 @@ export default function Admin() {
     });
     return () => { alive = false; subscription.unsubscribe(); };
   }, []);
+
+  useEffect(() => {
+    if (access !== 'owner') return;
+    client().rpc('cms_storage_usage').then(({ data }) => { const row = Array.isArray(data) ? data[0] : data; if (row) setStorageUsage({ storage_bytes: Number(row.storage_bytes), file_count: Number(row.file_count) }); }).catch(() => {});
+  }, [access, revision]);
 
   useEffect(() => {
     if (access !== 'owner') return;
@@ -130,10 +136,10 @@ export default function Admin() {
   </label>;
 
   return <main className="inner-page cms-admin"><header className="cms-heading"><div><p className="cms-eyebrow">DEMICORPSE / PRIVATE</p><h1>Archive <em>control.</em></h1><p className="cms-muted">A place for the things you want to keep.</p></div>
-    {access === 'owner' && <button className="cms-button" disabled={busy} onClick={() => {
+    {access === 'owner' && <div className="cms-admin-meta">{storageUsage && <div className="cms-storage"><div><span>MEDIA STORAGE</span><strong>{(storageUsage.storage_bytes/1024/1024).toFixed(1)} MB <i>/ 1 GB</i></strong></div><div className="cms-storage-bar" aria-label={`${Math.min(100,storageUsage.storage_bytes/(1024*1024*1024)*100).toFixed(1)}% storage used`}><i style={{width:`${Math.max(1,Math.min(100,storageUsage.storage_bytes/(1024*1024*1024)*100))}%`}} /></div><small>{storageUsage.file_count} files · {(storageUsage.storage_bytes/(1024*1024*1024)*100).toFixed(1)}% used</small></div>}<button className="cms-button" disabled={busy} onClick={() => {
       if (dirty && !window.confirm('Sign out and discard unsaved changes?')) return;
       void run(async () => { const { error } = await client().auth.signOut(); if (error) throw error; });
-    }}>Sign out</button>}</header>
+    }}>Sign out</button></div>}</header>
     {error && <p className="cms-message cms-error" role="alert">{error}</p>}
     {notice && <p className="cms-message" role="status">{notice}</p>}
     {!cms ? <section className="cms-login"><h2>The archive is being connected.</h2><p>Publishing will be available here once your private account is ready.</p></section>

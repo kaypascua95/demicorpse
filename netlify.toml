@@ -2,6 +2,25 @@
 command = "npm run build"
 publish = "dist"
 
+# Public browser configuration only. This key cannot bypass database/storage RLS.
+# No service-role key, owner password, or server secret belongs in this file.
+[build.environment]
+VITE_SUPABASE_URL = "https://gzgfiyaqgihbzfmhnvlh.supabase.co"
+VITE_SUPABASE_PUBLISHABLE_KEY = "sb_publishable_rON2sDNBp5dLBw-zZL3ASA_cUdgVTcO"
+
+[[headers]]
+for = "/admin*"
+[headers.values]
+X-Robots-Tag = "noindex, nofollow"
+Cache-Control = "no-store"
+
+[[headers]]
+for = "/*"
+[headers.values]
+X-Content-Type-Options = "nosniff"
+Referrer-Policy = "strict-origin-when-cross-origin"
+X-Frame-Options = "DENY"
+
 [[redirects]]
 from = "/*"
 to = "/index.html"

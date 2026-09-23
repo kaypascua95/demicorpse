@@ -1,32 +1,25 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { Markdown, Media } from '@/components/CmsContent';
 import { Marquee } from '@/components/ui/marquee';
 import { entryTimestamp, type Entry } from '@/lib/cms';
 import { SiteLink } from '@/lib/navigation';
 
-function FragmentCard({ entry, onImage }: { entry: Entry; onImage: (path:string)=>void }) {
-  const lead=entry.cover_image||entry.media[0];
-  return <article className="fragment-marquee-card">
-    <header><time dateTime={entry.published_at || entry.created_at}>{entryTimestamp(entry)}</time><span>{entry.media.length?'EVIDENCE':'THOUGHT'}</span></header>
-    {lead && <button className="fragment-marquee-media" onClick={()=>/\.(jpg|png|webp|gif)$/.test(lead)&&onImage(lead)}><Media path={lead} alt={entry.content.replace(/[#*_\x60]/g,'').slice(0,120)}/></button>}
-    <div className="fragment-marquee-copy"><Markdown content={entry.content.trim()}/></div>
-    <footer><SiteLink href={`/fragments/${entry.slug}`}>OPEN ↗</SiteLink>{entry.media.length>1&&<span>+{entry.media.length-1} MORE</span>}</footer>
-  </article>;
-}
-export default function FragmentFeed({entries}:{entries:Entry[]}) {
-  const [lightbox,setLightbox]=useState<string|null>(null);
-  if(!entries.length) return <section className="fragment-marquee-empty"><span>NO FRAGMENTS YET</span><p>The timeline is waiting for its first little piece of evidence.</p></section>;
-  const midpoint=Math.ceil(entries.length/2), first=entries.slice(0,midpoint), second=entries.slice(midpoint);
-  return <section className="fragment-marquee-stage" aria-label="Fragments">
-    <div className="fragment-marquee-columns">
-      <Marquee pauseOnHover vertical repeat={entries.length<3?4:2} className="fragment-marquee-track [--duration:34s]">
-        {first.map(entry=><FragmentCard key={entry.id} entry={entry} onImage={setLightbox}/>)}
-      </Marquee>
-      <Marquee reverse pauseOnHover vertical repeat={entries.length<3?4:2} className="fragment-marquee-track fragment-marquee-second [--duration:38s]">
-        {(second.length?second:first).map(entry=><FragmentCard key={entry.id} entry={entry} onImage={setLightbox}/>)}
-      </Marquee>
-    </div>
-    <div className="fragment-marquee-fade fragment-marquee-fade-top"/><div className="fragment-marquee-fade fragment-marquee-fade-bottom"/>
-    {lightbox&&<div className="fragment-lightbox" role="dialog" aria-modal="true" onClick={()=>setLightbox(null)}><button aria-label="Close image">×</button><div onClick={e=>e.stopPropagation()}><Media path={lightbox}/></div></div>}
-  </section>;
+type View='flow'|'chronological';
+type Sort='newest'|'oldest';
+const mediaKind=(entry:Entry)=>entry.media.some(p=>/\.(mp4|webm)$/.test(p))?'video':entry.media.some(p=>/\.(jpg|png|webp|gif)$/.test(p))?'photos':'text';
+function FragmentCard({entry,onImage}:{entry:Entry;onImage:(path:string)=>void}){const lead=entry.cover_image||entry.media[0];return <article className="fragment-marquee-card"><header><time dateTime={entry.date}>{entryTimestamp(entry)}</time><span>{entry.media.length?'EVIDENCE':'THOUGHT'}</span></header>{lead&&<button className="fragment-marquee-media" onClick={()=>/\.(jpg|png|webp|gif)$/.test(lead)&&onImage(lead)}><Media path={lead} alt={entry.content.replace(/[#*_\x60]/g,'').slice(0,120)}/></button>}<div className="fragment-marquee-copy"><Markdown content={entry.content.trim()}/>{entry.tags.length>0&&<div className="fragment-card-tags">{entry.tags.map(tag=><span key={tag}>#{tag.trim()}</span>)}</div>}</div><footer><SiteLink href={`/fragments/${entry.slug}`}>OPEN ↗</SiteLink>{entry.media.length>1&&<span>+{entry.media.length-1} MORE</span>}</footer></article>}
+export default function FragmentFeed({entries}:{entries:Entry[]}){
+ const params=new URLSearchParams(window.location.search);
+ const [view,setView]=useState<View>(params.get('view')==='chronological'?'chronological':'flow');
+ const [sort,setSort]=useState<Sort>(params.get('sort')==='oldest'?'oldest':'newest');
+ const [year,setYear]=useState(params.get('year')||'all'),[month,setMonth]=useState(params.get('month')||'all'),[tag,setTag]=useState(params.get('tag')||'all'),[kind,setKind]=useState(params.get('media')||'all'),[query,setQuery]=useState(params.get('q')||''),[lightbox,setLightbox]=useState<string|null>(null);
+ const years=useMemo(()=>[...new Set(entries.map(e=>e.date.slice(0,4)).filter(Boolean))].sort().reverse(),[entries]);
+ const tags=useMemo(()=>[...new Set(entries.flatMap(e=>e.tags.map(t=>t.trim()).filter(Boolean)))].sort((a,b)=>a.localeCompare(b)),[entries]);
+ const filtered=useMemo(()=>entries.filter(e=>(year==='all'||e.date.startsWith(year))&&(month==='all'||e.date.slice(5,7)===month)&&(tag==='all'||e.tags.map(t=>t.trim()).includes(tag))&&(kind==='all'||mediaKind(e)===kind)&&(!query.trim()||(e.content+' '+e.tags.join(' ')).toLowerCase().includes(query.trim().toLowerCase()))).sort((a,b)=>(sort==='newest'?-1:1)*a.date.localeCompare(b.date)),[entries,year,month,tag,kind,query,sort]);
+ const update=(next:Record<string,string>)=>{const p=new URLSearchParams(window.location.search);Object.entries(next).forEach(([k,v])=>v==='all'||!v?p.delete(k):p.set(k,v));history.replaceState({},'',window.location.pathname+(p.size?'?'+p.toString():''));};
+ const choose=<T extends string>(setter:(v:T)=>void,key:string)=>(e:React.ChangeEvent<HTMLSelectElement>)=>{const v=e.target.value as T;setter(v);update({[key]:v})};
+ if(!entries.length)return <section className="fragment-marquee-empty"><span>NO FRAGMENTS YET</span><p>The timeline is waiting for its first little piece of evidence.</p></section>;
+ const midpoint=Math.ceil(filtered.length/2),first=filtered.slice(0,midpoint),second=filtered.slice(midpoint);
+ const grouped=filtered.reduce<Record<string,Entry[]>>((acc,e)=>{const key=e.date.slice(0,7)||'undated';(acc[key]??=[]).push(e);return acc},{});
+ return <><section className="fragment-controls" aria-label="Fragment archive controls"><div className="fragment-view-toggle"><button aria-pressed={view==='flow'} onClick={()=>{setView('flow');update({view:'flow'})}}>FLOW</button><button aria-pressed={view==='chronological'} onClick={()=>{setView('chronological');update({view:'chronological'})}}>CHRONOLOGICAL</button></div><div className="fragment-filters"><label>Sort<select value={sort} onChange={choose<Sort>(setSort,'sort')}><option value="newest">Newest first</option><option value="oldest">Oldest first</option></select></label><label>Year<select value={year} onChange={choose(setYear,'year')}><option value="all">All years</option>{years.map(y=><option key={y}>{y}</option>)}</select></label><label>Month<select value={month} onChange={choose(setMonth,'month')}><option value="all">All months</option>{Array.from({length:12},(_,i)=>String(i+1).padStart(2,'0')).map((m,i)=><option value={m} key={m}>{new Date(2020,i).toLocaleString('en-US',{month:'long'})}</option>)}</select></label><label>Tag<select value={tag} onChange={choose(setTag,'tag')}><option value="all">All tags</option>{tags.map(t=><option key={t}>{t}</option>)}</select></label><label>Media<select value={kind} onChange={choose(setKind,'media')}><option value="all">All</option><option value="text">Text</option><option value="photos">Photos</option><option value="video">Video</option></select></label><label className="fragment-search">Search<input value={query} placeholder="words, tags…" onChange={e=>{setQuery(e.target.value);update({q:e.target.value})}}/></label></div><p>{filtered.length} {filtered.length===1?'fragment':'fragments'} found</p></section>{!filtered.length?<section className="fragment-marquee-empty"><span>NOTHING MATCHED</span><p>Try opening the archive a little wider.</p></section>:view==='chronological'?<section className="fragment-chronology">{Object.entries(grouped).map(([key,items])=><section key={key}><h2>{key==='undated'?'UNDATED':new Date(key+'-01T12:00:00').toLocaleString('en-US',{month:'long',year:'numeric'}).toUpperCase()}</h2>{items.map(e=><SiteLink className="fragment-timeline-row" href={`/fragments/${e.slug}`} key={e.id}><time>{e.date}</time><div><Markdown content={e.content.trim().slice(0,240)}/>{e.tags.length>0&&<small>{e.tags.map(t=>'#'+t.trim()).join(' · ')}</small>}</div><span>→</span></SiteLink>)}</section>)}</section>:<section className="fragment-marquee-stage" aria-label="Fragments"><div className="fragment-marquee-columns"><Marquee pauseOnHover vertical repeat={filtered.length<3?4:2} className="fragment-marquee-track [--duration:34s]">{first.map(e=><FragmentCard key={e.id} entry={e} onImage={setLightbox}/>)}</Marquee><Marquee reverse pauseOnHover vertical repeat={filtered.length<3?4:2} className="fragment-marquee-track fragment-marquee-second [--duration:38s]">{(second.length?second:first).map(e=><FragmentCard key={e.id} entry={e} onImage={setLightbox}/>)}</Marquee></div><div className="fragment-marquee-fade fragment-marquee-fade-top"/><div className="fragment-marquee-fade fragment-marquee-fade-bottom"/></section>}{lightbox&&<div className="fragment-lightbox" role="dialog" aria-modal="true" onClick={()=>setLightbox(null)}><button aria-label="Close image">×</button><div onClick={e=>e.stopPropagation()}><Media path={lightbox}/></div></div>}</>
 }

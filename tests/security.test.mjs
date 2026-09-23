@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { readFile } from 'node:fs/promises';
+import { readFile, readdir } from 'node:fs/promises';
 import { PGlite } from '@electric-sql/pglite';
 
 test('CMS migration: real PostgreSQL grants, RLS, triggers and storage policies', async t => {
@@ -19,6 +19,8 @@ test('CMS migration: real PostgreSQL grants, RLS, triggers and storage policies'
     create table auth.users(id uuid primary key);
     create function auth.uid() returns uuid language sql stable as
       $$ select nullif(current_setting('request.jwt.claim.sub', true),'')::uuid $$;
+    create function auth.jwt() returns jsonb language sql stable as
+      $$ select coalesce(nullif(current_setting('request.jwt.claims', true),''),'{}')::jsonb $$;
     grant usage on schema auth, storage, public to anon, authenticated;
     grant execute on function auth.uid() to anon, authenticated;
     create table storage.buckets(id text primary key, name text, public boolean,
@@ -28,12 +30,14 @@ test('CMS migration: real PostgreSQL grants, RLS, triggers and storage policies'
     grant select,insert,update,delete on storage.objects to anon,authenticated;
     insert into auth.users values ('${owner}'),('${outsider}');
   `);
-  await db.exec(await readFile(new URL('../supabase/migrations/202609230001_owner_cms.sql', import.meta.url), 'utf8'));
-  await db.exec(await readFile(new URL('../supabase/migrations/202609230002_private_owner_check.sql', import.meta.url), 'utf8'));
-  async function as(role, uid, sql, params = []) {
+  for (const file of (await readdir(new URL('../supabase/migrations/', import.meta.url))).filter(f => f.endsWith('.sql')).sort()) {
+    await db.exec(await readFile(new URL(`../supabase/migrations/${file}`, import.meta.url), 'utf8'));
+  }
+  async function as(role, uid, sql, params = [], aal = 'aal2') {
     return db.transaction(async tx => {
       await tx.exec(`set local role ${role};`);
       await tx.query(`select set_config('request.jwt.claim.sub',$1,true)`, [uid || '']);
+      await tx.query(`select set_config('request.jwt.claims',$1,true)`, [JSON.stringify({ aal })]);
       return tx.query(sql, params);
     });
   }
@@ -93,6 +97,22 @@ test('CMS migration: real PostgreSQL grants, RLS, triggers and storage policies'
       await own('update cms_entries set media=array[$1] where id=$2', [draftFile, draft]);
       for (const read of [anon, other]) assert.deepEqual((await read('select name from storage.objects')).rows.map(r => r.name), [file]);
       assert.equal((await own('select * from storage.objects')).rows.length, 2);
+    });
+    await t.test('owner password-only or missing assurance cannot read drafts, write, upload or delete', async () => {
+      for (const aal of ['aal1', null]) {
+        const passwordOnly = (sql, params) => as('authenticated', owner, sql, params, aal);
+        assert.equal((await passwordOnly('select cms_is_owner_account() as allowed')).rows[0].allowed, true);
+        assert.equal((await passwordOnly('select cms_is_owner() as allowed')).rows[0].allowed, false);
+        assert.deepEqual((await passwordOnly('select id from cms_entries')).rows.map(r => r.id), [live]);
+        await assert.rejects(passwordOnly("insert into cms_entries(collection,slug) values ('journal','no-mfa')"), /row-level security/);
+        assert.equal((await passwordOnly("update cms_entries set title='attack' returning id")).rows.length, 0);
+        assert.equal((await passwordOnly('delete from cms_entries returning id')).rows.length, 0);
+        assert.deepEqual((await passwordOnly('select name from storage.objects')).rows.map(r => r.name), [file]);
+        await assert.rejects(passwordOnly("insert into storage.objects(bucket_id,name) values ('cms-media',$1)", [draftFile]), /row-level security/);
+        assert.equal((await passwordOnly('delete from storage.objects returning id')).rows.length, 0);
+      }
+      assert.equal((await other('select cms_is_owner_account() as allowed')).rows[0].allowed, false);
+      await assert.rejects(anon('select cms_is_owner_account()'), /permission denied/);
     });
     await t.test('cross-entry media references and unsafe file types cannot be published', async () => {
       await assert.rejects(own('update cms_entries set media=array[$1] where id=$2', [draftFile, live]), /Media must belong/);

@@ -135,3 +135,30 @@
  .inner-page{padding-top:150px!important}
  .coming-page{padding-top:112px!important}
 }
+
+
+/* Global header alignment: one typographic system + unclipped More control */
+.global-header{overflow:visible!important}
+.global-header .primary-nav button,
+.global-header .more-trigger{
+  font-family:"DM Mono",monospace!important;
+  font-size:8px!important;
+  font-weight:400!important;
+  letter-spacing:.2em!important;
+  line-height:1!important;
+}
+.global-header .more-nav{overflow:visible!important;display:flex!important;align-items:center!important}
+.global-header .more-trigger{
+  box-sizing:border-box!important;
+  height:38px!important;
+  min-width:118px!important;
+  padding:0 18px!important;
+  flex-shrink:0!important;
+  white-space:nowrap!important;
+}
+.global-header .more-trigger svg{width:13px!important;height:13px!important;flex:0 0 auto!important}
+@media(max-width:900px) and (min-width:601px){
+  .global-header{padding-left:4vw!important;padding-right:4vw!important;gap:18px!important}
+  .global-header .primary-nav{gap:clamp(18px,3vw,36px)!important}
+  .global-header .more-trigger{min-width:108px!important;padding-inline:15px!important}
+}

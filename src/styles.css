@@ -121,3 +121,17 @@
  .global-header .more-nav .more-dropdown{padding-top:14px!important}
  .global-header .more-nav nav.dc-mobile-menu>a{padding:7px 0!important;font-size:24px!important}
 }
+
+/* Dedicated portrait navigation — independent of the More dropdown */
+.portrait-primary-nav{display:none}
+@media(max-width:600px) and (orientation:portrait){
+ .global-header{height:auto!important;min-height:64px!important;display:grid!important;grid-template-columns:1fr auto!important;grid-template-rows:64px auto!important;align-items:center!important;padding:0 5vw!important;background:rgba(11,11,12,.94)!important}
+ .global-header .main-logo{grid-column:1;grid-row:1}
+ .global-header>.more-nav{grid-column:2;grid-row:1}
+ .global-header>.primary-nav{display:none!important}
+ .global-header>.portrait-primary-nav{grid-column:1/-1;grid-row:2;display:flex!important;width:calc(100% + 10vw)!important;margin-left:-5vw!important;padding:0 5vw 10px!important;gap:18px!important;overflow-x:auto!important;white-space:nowrap!important;scrollbar-width:none!important;-webkit-overflow-scrolling:touch!important;border-top:1px solid rgba(232,228,220,.09)}
+ .global-header>.portrait-primary-nav::-webkit-scrollbar{display:none}
+ .global-header>.portrait-primary-nav button{flex:0 0 auto!important;border:0!important;background:transparent!important;color:#c5c3bc!important;padding:12px 0 7px!important;font:7px "DM Mono"!important;letter-spacing:.16em!important;cursor:pointer!important}
+ .inner-page{padding-top:150px!important}
+ .coming-page{padding-top:112px!important}
+}

@@ -1,14 +1,13 @@
 import { useState } from 'react';
 import { Markdown, Media } from '@/components/CmsContent';
 import { Marquee } from '@/components/ui/marquee';
-import type { Entry } from '@/lib/cms';
+import { entryTimestamp, type Entry } from '@/lib/cms';
 import { SiteLink } from '@/lib/navigation';
 
 function FragmentCard({ entry, onImage }: { entry: Entry; onImage: (path:string)=>void }) {
-  const date=new Date(`${entry.date}T12:00:00`).toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'});
   const lead=entry.cover_image||entry.media[0];
   return <article className="fragment-marquee-card">
-    <header><time dateTime={entry.date}>{date}</time><span>{entry.media.length?'EVIDENCE':'THOUGHT'}</span></header>
+    <header><time dateTime={entry.published_at || entry.created_at}>{entryTimestamp(entry)}</time><span>{entry.media.length?'EVIDENCE':'THOUGHT'}</span></header>
     {lead && <button className="fragment-marquee-media" onClick={()=>/\.(jpg|png|webp|gif)$/.test(lead)&&onImage(lead)}><Media path={lead} alt={entry.content.replace(/[#*_\x60]/g,'').slice(0,120)}/></button>}
     <div className="fragment-marquee-copy"><Markdown content={entry.content.trim()}/></div>
     <footer><SiteLink href={`/fragments/${entry.slug}`}>OPEN ↗</SiteLink>{entry.media.length>1&&<span>+{entry.media.length-1} MORE</span>}</footer>

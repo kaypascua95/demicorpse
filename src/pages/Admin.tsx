@@ -3,6 +3,7 @@ import { EntryView, Media } from '@/components/CmsContent';
 import { client, cms, collections, editable, errorMessage, listEntries, mediaTypes, newEntry, removeMedia, saveEntry, slugify, uploadMedia, type Collection, type Entry, type EntryInput } from '@/lib/cms';
 import { SiteLink } from '@/lib/navigation';
 import OwnerMfa from '@/components/OwnerMfa';
+import { TraceAdmin } from '@/components/Traces';
 
 export default function Admin() {
   const [access, setAccess] = useState<'checking' | 'login' | 'denied' | 'mfa' | 'owner'>('checking');
@@ -12,6 +13,7 @@ export default function Admin() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [collection, setCollection] = useState<Collection>('journal');
+  const [adminSection, setAdminSection] = useState<'content'|'traces'>('content');
   const [entries, setEntries] = useState<Entry[]>([]);
   const [page, setPage] = useState(0);
   const [listLoading, setListLoading] = useState(false);
@@ -142,7 +144,7 @@ export default function Admin() {
         <label className="cms-field">Password<input type="password" autoComplete="current-password" required value={password} onChange={e => setPassword(e.target.value)} /></label>
         <button className="cms-button cms-primary" disabled={busy}>{busy ? 'Signing in…' : 'Sign in'}</button></form>
       : access === 'denied' ? <section className="cms-login"><h2>This room is private.</h2><p>Your account does not have publishing access.</p><button className="cms-button" onClick={() => void run(async () => { const { error } = await client().auth.signOut(); if (error) throw error; })}>Sign out</button></section>
-      : <><nav className="cms-tabs" aria-label="Collections">{collections.map(item => <button key={item} aria-current={collection === item ? 'page' : undefined} disabled={busy} onClick={() => {
+      : <><nav className="cms-tabs" aria-label="Admin sections"><button aria-current={adminSection === 'content' ? 'page' : undefined} onClick={() => setAdminSection('content')}>CONTENT</button><button aria-current={adminSection === 'traces' ? 'page' : undefined} onClick={() => setAdminSection('traces')}>TRACES</button></nav>{adminSection === 'traces' ? <TraceAdmin /> : <><nav className="cms-tabs" aria-label="Collections">{collections.map(item => <button key={item} aria-current={collection === item ? 'page' : undefined} disabled={busy} onClick={() => {
         if (dirty && !window.confirm('Discard unsaved changes?')) return;
         setCollection(item); setPage(0); setDraft(null); setSavedEntry(null); setDirty(false); setPreview(false); setError(''); setNotice('');
       }}>{item}</button>)}</nav><div className="cms-workspace"><aside className="cms-sidebar"><button className="cms-button cms-primary" disabled={busy} onClick={() => choose(null)}>+ New {collection === 'fragments' ? 'fragment' : collection === 'gallery' ? 'photo' : 'entry'}</button>
@@ -189,6 +191,6 @@ export default function Admin() {
               setDraft(null); setSavedEntry(null); setDirty(false); setRevision(value => value + 1); setNotice('Entry deleted.');
             });
           }}>Delete entry</button></div>}
-      </>}</section></div></>}
+      </>}</section></div></>}</>}
   </main>;
 }

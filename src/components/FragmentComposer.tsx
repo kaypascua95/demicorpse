@@ -44,7 +44,7 @@ export default function FragmentComposer({ onPublished }: { onPublished: (entry:
     <div className="fragment-composer-label"><span>QUICK CAPTURE</span><span>text · markdown · media</span></div>
     <div className="trace-toolbar">{tools.map(([label,Icon,action])=><button key={label} type="button" title={label} aria-label={label} onClick={action}><Icon size={15}/></button>)}<button type="button" className="trace-clear" title="Clear" aria-label="Clear" onClick={()=>setTextValue('')}><Trash2 size={15}/></button></div>
     <textarea ref={editor} value={textValue} onChange={e => setTextValue(e.target.value)} onPaste={onPaste}
-      placeholder="Leave a fragment…" aria-label="New fragment" rows={4} maxLength={200000} />
+      placeholder="Leave a trace…" aria-label="New trace" rows={4} maxLength={200000} />
     {!!files.length && <div className="fragment-file-preview">{files.map((file, index) => <div key={file.name + file.lastModified + index}>
       {file.type.startsWith('image/') ? <img src={URL.createObjectURL(file)} alt="" /> : <span><Paperclip size={16}/>{file.name}</span>}
       <button aria-label={`Remove ${file.name}`} onClick={() => setFiles(current => current.filter((_, i) => i !== index))}><X size={14}/></button>
@@ -54,7 +54,7 @@ export default function FragmentComposer({ onPublished }: { onPublished: (entry:
       <div><button className="fragment-icon-button" onClick={() => input.current?.click()} title="Add media"><ImagePlus size={18}/><span>Add media</span></button>
       <span className="fragment-drop-hint">or drop / paste files here</span></div>
       <button className="fragment-publish" disabled={busy || (!textValue.trim() && !files.length)} onClick={publish}>
-        {busy ? <><LoaderCircle className="fragment-spin" size={16}/> Posting…</> : <><Send size={15}/> Post fragment</>}
+        {busy ? <><LoaderCircle className="fragment-spin" size={16}/> Posting…</> : <><Send size={15}/> Post trace</>}
       </button>
     </div>
     <input ref={input} hidden type="file" multiple accept={Object.keys(mediaTypes).join(',')} onChange={e => { addFiles(Array.from(e.target.files || [])); e.target.value=''; }} />

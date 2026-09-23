@@ -94,12 +94,24 @@ export default function Admin() {
     });
   }
   function upload(file?: File) {
-    if (!file || !draft || !savedEntry) return;
+    if (!file || !draft) return;
     void run(async () => {
-      const path = await uploadMedia(draft.id, file);
-      const next = { ...draft, media: [...draft.media, path] };
-      try { await persist(next); }
-      catch (error) { await removeMedia([path]).catch(() => {}); throw error; }
+      // Storage policy requires an entry row to exist first. Create the draft
+      // automatically so media upload works on a brand-new fragment.
+      let base = savedEntry;
+      let current = draft;
+      if (!base) {
+        base = await saveEntry({ ...current, status: 'draft' }, false);
+        current = editable(base);
+        setSavedEntry(base); setDraft(current); setDirty(false);
+      }
+      const path = await uploadMedia(current.id, file);
+      const next = { ...current, media: [...current.media, path] };
+      try {
+        const result = await saveEntry(next, true, base.updated_at);
+        setSavedEntry(result); setDraft(editable(result)); setDirty(false);
+        setRevision(value => value + 1);
+      } catch (error) { await removeMedia([path]).catch(() => {}); throw error; }
       setNotice('Media uploaded and saved.');
     });
   }
@@ -148,8 +160,8 @@ export default function Admin() {
           {fields(collection === 'archive' ? 'description' : 'content', collection === 'fragments' ? 'Fragment' : 'Writing / Markdown', true, collection === 'archive' ? 20000 : 200000)}
           {collection === 'journal' && <label className="cms-field">Tags / separated by commas<input value={draft.tags.join(',')} onChange={e => change('tags', e.target.value.split(',').slice(0, 30))} /></label>}
           {collection === 'fragments' && <p className="cms-muted">A thought, a photograph, a little evidence. Add a few words as a caption, then attach what you want to keep.</p>}
-          <section className="cms-uploads"><h3>Media</h3><p className="cms-muted">Images, audio, and video · up to 25 MB each. Save a draft before uploading. Uploads save your current edits.</p>
-            <input ref={fileInput} type="file" aria-label="Upload media" accept={Object.keys(mediaTypes).join(',')} disabled={!savedEntry || draft.media.length >= 30} onChange={e => { upload(e.target.files?.[0]); e.target.value = ''; }} />
+          <section className="cms-uploads"><h3>Media</h3><p className="cms-muted">Images, audio, and video · up to 25 MB each. Uploads automatically save a private draft.</p>
+            <input ref={fileInput} type="file" aria-label="Upload media" accept={Object.keys(mediaTypes).join(',')} disabled={draft.media.length >= 30} onChange={e => { upload(e.target.files?.[0]); e.target.value = ''; }} />
             {draft.media.map(path => <div className="cms-upload" key={path}><Media path={path} preview /><div className="cms-actions">
               {/\.(jpg|png|webp|gif)$/.test(path) && <button type="button" className="cms-button" onClick={() => change('cover_image', draft.cover_image === path ? null : path)}>{draft.cover_image === path ? 'Remove cover' : 'Use as cover'}</button>}
               <button type="button" className="cms-button" onClick={() => {

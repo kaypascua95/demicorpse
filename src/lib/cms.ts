@@ -74,6 +74,13 @@ export async function removeMedia(paths: string[]) {
   const { error } = await client().storage.from('cms-media').remove([...new Set(paths)]);
   if (error) throw error;
 }
+export function entryTimestamp(entry: Pick<Entry, 'created_at' | 'published_at'>) {
+  const value = entry.published_at || entry.created_at;
+  return new Date(value).toLocaleString('en-US', {
+    month: 'short', day: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit',
+    timeZone: 'America/New_York', timeZoneName: 'short',
+  });
+}
 export function errorMessage(error: unknown) {
   return error instanceof Error || (error && typeof error === 'object' && 'message' in error)
     ? String(error.message) : 'Something went wrong. Please try again.';

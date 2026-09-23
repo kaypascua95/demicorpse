@@ -106,3 +106,18 @@
  .global-header .more-nav nav.dc-mobile-menu{display:flex!important;flex-direction:column!important;align-items:stretch!important;gap:0!important;width:100%!important}
  .global-header .more-nav nav.dc-mobile-menu>a{display:grid!important;visibility:visible!important;opacity:1;grid-template-columns:34px minmax(0,1fr)!important;width:100%!important}
 }
+
+/* Portrait-phone navigation: fit the complete menu inside short/narrow viewports */
+@media (max-width:600px) and (orientation:portrait){
+ .global-header{height:60px!important}
+ .global-header .more-nav .more-dropdown{top:60px!important;height:calc(100dvh - 60px)!important;min-height:0!important;padding:18px 7vw 16px!important;overflow-y:auto!important;overscroll-behavior:contain!important;-webkit-overflow-scrolling:touch!important}
+ .global-header .more-nav nav.dc-mobile-menu{display:flex!important;min-height:0!important}
+ .global-header .more-nav nav.dc-mobile-menu>a{padding:9px 0!important;font-size:clamp(22px,7.2vw,32px)!important;line-height:1!important;min-height:0!important}
+ .global-header .more-nav nav.dc-mobile-menu>a>span{font-size:5px!important}
+ .global-header .more-dropdown-foot{margin-top:18px!important;padding-top:14px!important;font-size:5px!important;line-height:1.55!important}
+}
+@media (max-width:390px) and (orientation:portrait){
+ .global-header .main-logo img{width:104px!important}
+ .global-header .more-nav .more-dropdown{padding-top:14px!important}
+ .global-header .more-nav nav.dc-mobile-menu>a{padding:7px 0!important;font-size:24px!important}
+}

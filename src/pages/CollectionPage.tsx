@@ -7,6 +7,7 @@ import { client } from '@/lib/cms';
 import { entryTimestamp, errorMessage, listEntries, publicCms, type Collection, type Entry } from '@/lib/cms';
 import { SiteLink } from '@/lib/navigation';
 import { SqueezeCarousel, type SqueezeSlide } from '@/components/ui/carousel-squeeze';
+import Traces from '@/components/Traces';
 
 const copy = {
   journal: ['01 / JOURNAL', 'Things I wanted', 'to remember.', 'Longer thoughts, stories, and the things that refused to stay in my head.'],
@@ -53,7 +54,7 @@ export default function CollectionPage({ collection, slug }: { collection: Colle
   if (loading) return <main className="inner-page"><p role="status" className="cms-muted">Opening the archive…</p></main>;
   if (error) return <main className="inner-page"><p role="alert">The archive couldn’t be loaded.</p><button className="cms-button" onClick={() => setRetry(retry + 1)}>Try again</button></main>;
   if (slug) return <main className="inner-page"><SiteLink className="cms-back" href={`/${collection}/`}>← {collection}</SiteLink>
-    {entries[0] ? <EntryView entry={entries[0]} /> : <div className="cms-entry"><h1>Nothing here.</h1><p>This entry isn’t available.</p></div>}</main>;
+    {entries[0] ? <><EntryView entry={entries[0]} />{(collection === 'journal' || collection === 'fragments') && <Traces entryId={entries[0].id} />}</> : <div className="cms-entry"><h1>Nothing here.</h1><p>This entry isn’t available.</p></div>}</main>;
   if (!entries.length && page === 0 && collection !== 'fragments') return <ComingSoon page={collection} />;
   const [label, first, second, note] = copy[collection];
   return <main className="inner-page"><header className="page-head"><span>{label}</span><h1>{first}<br /><em>{second}</em></h1><p>{note}</p></header>

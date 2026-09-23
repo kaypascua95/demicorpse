@@ -154,13 +154,13 @@ export default function Admin() {
           {collection !== 'fragments' && fields('title', 'Title', false, 300)}
           <div className="cms-field-row">{fields('date', 'Date')}{collection !== 'fragments' && fields('slug', 'Address / slug', false, 180)}</div>
           {collection !== 'fragments' && <button type="button" className="cms-text-button" onClick={() => change('slug', slugify(draft.title) || draft.id)}>Use title for address</button>}
-          {collection === 'journal' && fields('excerpt', 'A few words before the entry', true, 2000)}
+          {collection === 'journal' && <>{fields('excerpt', 'A few words before the entry', true, 2000)}{fields('quote', 'Pull quote / highlighted thought', true, 3000)}<label className="cms-field">Image layout<select value={draft.media_layout} onChange={e => change('media_layout', e.target.value)}><option value="full">Full width</option><option value="wide">Cinematic wide</option><option value="left">Wrap text — image left</option><option value="right">Wrap text — image right</option><option value="gallery">Gallery grid</option></select><small className="cms-muted">Controls how uploaded images are composed inside the journal entry.</small></label></>}
           {collection === 'play' && fields('game', 'Game', false, 300)}
           {collection === 'archive' && fields('type', 'Type of memory', false, 100)}
           {fields(collection === 'archive' ? 'description' : 'content', collection === 'fragments' ? 'Fragment' : 'Writing / Markdown', true, collection === 'archive' ? 20000 : 200000)}
           {collection === 'journal' && <label className="cms-field">Tags / separated by commas<input value={draft.tags.join(',')} onChange={e => change('tags', e.target.value.split(',').slice(0, 30))} /></label>}
           {collection === 'fragments' && <p className="cms-muted">A thought, a photograph, a little evidence. Add a few words as a caption, then attach what you want to keep.</p>}
-          <section className="cms-uploads"><h3>Media</h3><p className="cms-muted">Images, audio, and video · up to 25 MB each. Uploads automatically save a private draft.</p>
+          <section className="cms-uploads"><h3>{collection === 'journal' ? 'Journal images & media' : 'Media'}</h3><p className="cms-muted">Images, audio, and video · up to 25 MB each. Uploads automatically save a private draft.</p>
             <input ref={fileInput} type="file" aria-label="Upload media" accept={Object.keys(mediaTypes).join(',')} disabled={draft.media.length >= 30} onChange={e => { upload(e.target.files?.[0]); e.target.value = ''; }} />
             {draft.media.map(path => <div className="cms-upload" key={path}><Media path={path} preview /><div className="cms-actions">
               {/\.(jpg|png|webp|gif)$/.test(path) && <button type="button" className="cms-button" onClick={() => change('cover_image', draft.cover_image === path ? null : path)}>{draft.cover_image === path ? 'Remove cover' : 'Use as cover'}</button>}

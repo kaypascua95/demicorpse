@@ -6,6 +6,7 @@ import TraceSection from '@/components/TraceSection';
 import { entryTimestamp, errorMessage, listEntries, publicCms, type Collection, type Entry } from '@/lib/cms';
 import { SiteLink } from '@/lib/navigation';
 import { SqueezeCarousel, type SqueezeSlide } from '@/components/ui/carousel-squeeze';
+import Timeline06 from '@/components/ui/timeline-06';
 
 const copy = {
   journal: ['01 / JOURNAL', 'Things I wanted', 'to remember.', 'Longer thoughts, stories, and the things that refused to stay in my head.'],
@@ -24,6 +25,7 @@ export default function CollectionPage({ collection, slug }: { collection: Colle
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [retry, setRetry] = useState(0);
+  const [indexView,setIndexView]=useState<'featured'|'chronological'>('featured');
   useEffect(() => {
     let active = true;
     setLoading(true); setError('');
@@ -49,7 +51,7 @@ export default function CollectionPage({ collection, slug }: { collection: Colle
   if (!entries.length && page === 0 && collection !== 'fragments') return <ComingSoon page={collection} />;
   const [label, first, second, note] = copy[collection];
   return <main className="inner-page"><header className="page-head"><span>{label}</span><h1>{first}<br /><em>{second}</em></h1><p>{note}</p></header>
-    {collection === 'journal' && entries.length > 0 && <JournalSqueeze entries={entries} />}
+    {collection === 'journal' && entries.length > 0 && <><div className="fragment-view-switch"><button aria-pressed={indexView==='featured'} onClick={()=>setIndexView('featured')}>FEATURED</button><button aria-pressed={indexView==='chronological'} onClick={()=>setIndexView('chronological')}>CHRONOLOGICAL</button></div>{indexView==='featured'?<JournalSqueeze entries={entries}/>:<Timeline06 entries={entries} collection="journal"/>}</>}
     {collection === 'fragments' ? <FragmentFeed entries={entries} /> : <section className="entry-index">{entries.map(entry => <SiteLink key={entry.id} href={`/${collection}/${entry.slug}`}>
       <time dateTime={entry.published_at || entry.created_at}>{entryTimestamp(entry)}</time><div><strong>{entry.title}</strong>{entry.excerpt && <p className="cms-muted">{entry.excerpt}</p>}</div><span>{entry.game || entry.type || collection} →</span>
     </SiteLink>)}</section>}

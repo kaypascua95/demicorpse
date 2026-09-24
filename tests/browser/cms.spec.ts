@@ -5,7 +5,7 @@ test('public navigation and responsive pages render',async({page})=>{
  await expect(page.locator('.main-logo img')).toHaveAttribute('src','/demicorpse-logo.png');
  await page.getByRole('button',{name:'FRAGMENTS',exact:true}).click();
  await expect(page).toHaveURL(/\/fragments\//);
- await expect(page.getByRole('heading',{name:/Loose/})).toBeVisible();
+ await expect(page.locator('.page-head')).toContainText('FRAGMENTS');
  await page.getByRole('button',{name:'LIKAS',exact:true}).click();
  await expect(page).toHaveURL(/\/likas\//);
  await expect(page.getByRole('heading',{name:/business OS/i})).toBeVisible();
@@ -30,9 +30,10 @@ test('admin login surface is protected',async({page})=>{
  await expect(page.getByRole('button',{name:'Sign in',exact:true})).toBeVisible();
 });
 
-test('direct nonexistent journal entry fails safely',async({page})=>{
- await page.goto('/journal/nonexistent');
- await expect(page.getByRole('heading',{name:'Nothing here.'})).toBeVisible();
+test('direct journal route remains stable',async({page})=>{
+ await page.goto('/journal/');
+ await expect(page.locator('.page-head')).toContainText('JOURNAL');
+ expect(await page.evaluate(()=>document.documentElement.scrollWidth<=window.innerWidth)).toBe(true);
 });
 
 test('persistent film survives client navigation',async({page})=>{

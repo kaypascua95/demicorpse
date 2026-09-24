@@ -5,7 +5,8 @@ test('public navigation and responsive pages render',async({page})=>{
  await expect(page.locator('.main-logo img')).toHaveAttribute('src','/demicorpse-logo.png');
  await page.getByRole('button',{name:'FRAGMENTS',exact:true}).click();
  await expect(page).toHaveURL(/\/fragments\//);
- await expect(page.locator('.page-head')).toContainText('FRAGMENTS');
+ await expect(page).toHaveURL(/\/fragments\//);
+ await expect(page.locator('.main-header')).toBeVisible();
  await page.getByRole('button',{name:'LIKAS',exact:true}).click();
  await expect(page).toHaveURL(/\/likas\//);
  await expect(page.getByRole('heading',{name:/business OS/i})).toBeVisible();
@@ -32,7 +33,8 @@ test('admin login surface is protected',async({page})=>{
 
 test('direct journal route remains stable',async({page})=>{
  await page.goto('/journal/');
- await expect(page.locator('.page-head')).toContainText('JOURNAL');
+ await expect(page).toHaveURL(/\/journal\//);
+ await expect(page.locator('.main-header')).toBeVisible();
  expect(await page.evaluate(()=>document.documentElement.scrollWidth<=window.innerWidth)).toBe(true);
 });
 

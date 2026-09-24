@@ -38,9 +38,9 @@ export function EntryView({ entry, preview = false }: { entry: EntryInput | Entr
   return <article className="cms-entry">
     <header><p className="cms-eyebrow">{entry.collection} / <time dateTime={timestamp && "created_at" in entry ? (entry.published_at || entry.created_at) : entry.date}>{timestamp || entry.date}</time></p>
       {entry.title && <h1>{entry.title}</h1>}
-      {entry.game && <p className="cms-muted">{entry.game}</p>}
+      {entry.game && <p className="cms-muted">{entry.game}{entry.duration ? ` · ${entry.duration}` : ''}</p>}
       {entry.type && <p className="cms-muted">{entry.type}</p>}
-      {entry.excerpt && <p className="cms-excerpt">{entry.excerpt}</p>}
+      {entry.excerpt && <p className="cms-excerpt">{entry.excerpt}</p>}{entry.collection === 'play' && entry.video_url && /^https:\/\//.test(entry.video_url) && <p><a className="cms-button cms-primary" href={entry.video_url} target="_blank" rel="noopener noreferrer">Watch VOD ↗</a></p>}
     </header>
     {entry.collection === 'journal' ? <div className={`journal-story journal-layout-${entry.media_layout || 'full'}`}>
       {entry.cover_image && <div className="journal-lead-media"><Media path={entry.cover_image} preview={preview} /></div>}

@@ -1,5 +1,5 @@
 import { useRef, useState, type ClipboardEvent, type DragEvent } from 'react';
-import { ImagePlus, LoaderCircle, Paperclip, Send, X } from 'lucide-react';
+import { Bold, Code, ImagePlus, Italic, Link, List, ListOrdered, LoaderCircle, Paperclip, Quote, Send, Trash2, X } from 'lucide-react';
 import { editable, errorMessage, mediaTypes, newEntry, removeMedia, saveEntry, uploadMedia, type Entry } from '@/lib/cms';
 
 export default function FragmentComposer({ onPublished }: { onPublished: (entry: Entry) => void }) {
@@ -8,6 +8,9 @@ export default function FragmentComposer({ onPublished }: { onPublished: (entry:
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
   const input = useRef<HTMLInputElement>(null);
+  const editor = useRef<HTMLTextAreaElement>(null);
+  function format(before: string, after = before) { const el=editor.current;if(!el)return;const start=el.selectionStart,end=el.selectionEnd,selected=textValue.slice(start,end);setTextValue(textValue.slice(0,start)+before+selected+after+textValue.slice(end));requestAnimationFrame(()=>{el.focus();el.setSelectionRange(start+before.length,end+before.length);}); }
+  const tools=[['Bold',Bold,()=>format('**')],['Italic',Italic,()=>format('*')],['Quote',Quote,()=>format('> ','')],['Bullet list',List,()=>format('- ','')],['Numbered list',ListOrdered,()=>format('1. ','')],['Code',Code,()=>format('`')],['Link',Link,()=>format('[','](https://)')]] as const;
 
   function addFiles(incoming: File[]) {
     const valid = incoming.filter(file => mediaTypes[file.type] && file.size > 0 && file.size <= 25 * 1024 * 1024);
@@ -39,8 +42,9 @@ export default function FragmentComposer({ onPublished }: { onPublished: (entry:
   }
   return <section className="fragment-composer" onDragOver={event => event.preventDefault()} onDrop={onDrop}>
     <div className="fragment-composer-label"><span>QUICK CAPTURE</span><span>text · markdown · media</span></div>
-    <textarea value={textValue} onChange={e => setTextValue(e.target.value)} onPaste={onPaste}
-      placeholder="Leave a fragment…" aria-label="New fragment" rows={4} maxLength={200000} />
+    <div className="trace-toolbar">{tools.map(([label,Icon,action])=><button key={label} type="button" title={label} aria-label={label} onClick={action}><Icon size={15}/></button>)}<button type="button" className="trace-clear" title="Clear" aria-label="Clear" onClick={()=>setTextValue('')}><Trash2 size={15}/></button></div>
+    <textarea ref={editor} value={textValue} onChange={e => setTextValue(e.target.value)} onPaste={onPaste}
+      placeholder="Leave a trace…" aria-label="New trace" rows={4} maxLength={200000} />
     {!!files.length && <div className="fragment-file-preview">{files.map((file, index) => <div key={file.name + file.lastModified + index}>
       {file.type.startsWith('image/') ? <img src={URL.createObjectURL(file)} alt="" /> : <span><Paperclip size={16}/>{file.name}</span>}
       <button aria-label={`Remove ${file.name}`} onClick={() => setFiles(current => current.filter((_, i) => i !== index))}><X size={14}/></button>
@@ -50,7 +54,7 @@ export default function FragmentComposer({ onPublished }: { onPublished: (entry:
       <div><button className="fragment-icon-button" onClick={() => input.current?.click()} title="Add media"><ImagePlus size={18}/><span>Add media</span></button>
       <span className="fragment-drop-hint">or drop / paste files here</span></div>
       <button className="fragment-publish" disabled={busy || (!textValue.trim() && !files.length)} onClick={publish}>
-        {busy ? <><LoaderCircle className="fragment-spin" size={16}/> Posting…</> : <><Send size={15}/> Post fragment</>}
+        {busy ? <><LoaderCircle className="fragment-spin" size={16}/> Posting…</> : <><Send size={15}/> Post trace</>}
       </button>
     </div>
     <input ref={input} hidden type="file" multiple accept={Object.keys(mediaTypes).join(',')} onChange={e => { addFiles(Array.from(e.target.files || [])); e.target.value=''; }} />

@@ -3,6 +3,9 @@ import { EntryView, Media } from '@/components/CmsContent';
 import { client, cms, collections, editable, errorMessage, listEntries, mediaTypes, newEntry, removeMedia, saveEntry, slugify, uploadMedia, type Collection, type Entry, type EntryInput } from '@/lib/cms';
 import { SiteLink } from '@/lib/navigation';
 import OwnerMfa from '@/components/OwnerMfa';
+import GalleryAdmin from '@/components/GalleryAdmin';
+import { ImageIcon, X } from 'lucide-react';
+import { useFileUpload } from '@/components/ui/file-upload';
 
 export default function Admin() {
   const [access, setAccess] = useState<'checking' | 'login' | 'denied' | 'mfa' | 'owner'>('checking');
@@ -21,6 +24,7 @@ export default function Admin() {
   const [dirty, setDirty] = useState(false);
   const [preview, setPreview] = useState(false);
   const fileInput = useRef<HTMLInputElement>(null);
+  const [{files: cleanFiles, errors: cleanErrors},{removeFile: removeCleanFile, openFileDialog: openCleanDialog, getInputProps: cleanInputProps, handleDragEnter: cleanDragEnter, handleDragLeave: cleanDragLeave, handleDragOver: cleanDragOver, handleDrop: cleanDrop, clearFiles: clearCleanFiles}] = useFileUpload({accept:'image/*',maxSize:25*1024*1024});
   const authGeneration = useRef(0);
 
   useEffect(() => {
@@ -112,7 +116,7 @@ export default function Admin() {
         setSavedEntry(result); setDraft(editable(result)); setDirty(false);
         setRevision(value => value + 1);
       } catch (error) { await removeMedia([path]).catch(() => {}); throw error; }
-      setNotice('Media uploaded and saved.');
+      setNotice('Media uploaded and saved.'); clearCleanFiles();
     });
   }
   async function login(event: FormEvent) {
@@ -145,7 +149,7 @@ export default function Admin() {
       : <><nav className="cms-tabs" aria-label="Collections">{collections.map(item => <button key={item} aria-current={collection === item ? 'page' : undefined} disabled={busy} onClick={() => {
         if (dirty && !window.confirm('Discard unsaved changes?')) return;
         setCollection(item); setPage(0); setDraft(null); setSavedEntry(null); setDirty(false); setPreview(false); setError(''); setNotice('');
-      }}>{item}</button>)}</nav><div className="cms-workspace"><aside className="cms-sidebar"><button className="cms-button cms-primary" disabled={busy} onClick={() => choose(null)}>+ New {collection === 'fragments' ? 'fragment' : 'entry'}</button>
+      }}>{item}</button>)}<button aria-current={collection === 'gallery' as never ? 'page' : undefined} onClick={()=>{setCollection('gallery' as Collection);setDraft(null)}}>gallery</button></nav>{(collection as string)==='gallery'?<GalleryAdmin/>:<div className="cms-workspace"><aside className="cms-sidebar"><button className="cms-button cms-primary" disabled={busy} onClick={() => choose(null)}>+ New {collection === 'fragments' ? 'fragment' : 'entry'}</button>
         {listLoading ? <p role="status">Loading entries…</p> : !entries.length ? <p className="cms-muted">An empty room. Start with a draft.</p> : entries.map(entry => <button className="cms-list-item" key={entry.id} disabled={busy} aria-pressed={draft?.id === entry.id} onClick={() => choose(entry)}><span>{entry.status} / {entry.date}</span><strong>{entry.title || entry.content.slice(0, 65) || 'Untitled draft'}</strong></button>)}
         <div className="cms-pagination">{page > 0 && <button disabled={busy} className="cms-button" onClick={() => setPage(page - 1)}>Newer</button>}{entries.length === 20 && <button disabled={busy} className="cms-button" onClick={() => setPage(page + 1)}>Older</button>}</div>
       </aside><section className="cms-editor">{!draft ? <div className="cms-empty"><h2>Still <em>becoming.</em></h2><p>Choose an entry, or start something new.</p></div> : <>
@@ -155,13 +159,13 @@ export default function Admin() {
           <div className="cms-field-row">{fields('date', 'Date')}{collection !== 'fragments' && fields('slug', 'Address / slug', false, 180)}</div>
           {collection !== 'fragments' && <button type="button" className="cms-text-button" onClick={() => change('slug', slugify(draft.title) || draft.id)}>Use title for address</button>}
           {collection === 'journal' && <>{fields('excerpt', 'A few words before the entry', true, 2000)}{fields('quote', 'Pull quote / highlighted thought', true, 3000)}<label className="cms-field">Image layout<select value={draft.media_layout} onChange={e => change('media_layout', e.target.value)}><option value="full">Full width</option><option value="wide">Cinematic wide</option><option value="left">Wrap text — image left</option><option value="right">Wrap text — image right</option><option value="gallery">Gallery grid</option></select><small className="cms-muted">Controls how uploaded images are composed inside the journal entry.</small></label></>}
-          {collection === 'play' && fields('game', 'Game', false, 300)}
+          {collection === 'play' && <><div className="cms-field-row">{fields('game', 'Game', false, 300)}{fields('duration', 'Duration (e.g. 2h 47m)', false, 40)}</div>{fields('video_url', 'Twitch / YouTube VOD URL', false, 2000)}<label className="cms-check"><input type="checkbox" checked={draft.featured} onChange={e => setDraft(current => current ? { ...current, featured: e.target.checked } : current)} /> Feature this VOD at the top of Play</label><label className="cms-field">Tags / separated by commas<input value={draft.tags.join(',')} onChange={e => change('tags', e.target.value.split(',').map(tag => tag.trim()).filter(Boolean).slice(0, 30))} /></label><p className="cms-muted">Use the writing field for a short stream caption or description. Upload a thumbnail as media and choose “Use as cover.” The full VOD stays on Twitch/YouTube.</p></>}
           {collection === 'archive' && fields('type', 'Type of memory', false, 100)}
           {fields(collection === 'archive' ? 'description' : 'content', collection === 'fragments' ? 'Fragment' : 'Writing / Markdown', true, collection === 'archive' ? 20000 : 200000)}
           {collection === 'journal' && <label className="cms-field">Tags / separated by commas<input value={draft.tags.join(',')} onChange={e => change('tags', e.target.value.split(',').slice(0, 30))} /></label>}
           {collection === 'fragments' && <p className="cms-muted">A thought, a photograph, a little evidence. Add a few words as a caption, then attach what you want to keep.</p>}
           <section className="cms-uploads"><h3>{collection === 'journal' ? 'Journal images & media' : 'Media'}</h3><p className="cms-muted">Images, audio, and video · up to 25 MB each. Uploads automatically save a private draft.</p>
-            <input ref={fileInput} type="file" aria-label="Upload media" accept={Object.keys(mediaTypes).join(',')} disabled={draft.media.length >= 30} onChange={e => { upload(e.target.files?.[0]); e.target.value = ''; }} />
+            {(collection === 'journal' || collection === 'fragments') && <div className="gallery-upload-clean" onDragEnter={cleanDragEnter} onDragLeave={cleanDragLeave} onDragOver={cleanDragOver} onDrop={cleanDrop}>{cleanFiles[0]?.preview?<div className="gallery-upload-preview"><img src={cleanFiles[0].preview} alt="Selected image"/><button type="button" onClick={()=>removeCleanFile(cleanFiles[0].id)} aria-label="Remove image"><X size={16}/></button><button type="button" className="gallery-change" onClick={openCleanDialog}>Change image</button><button type="button" className="gallery-use-image" onClick={()=>upload(cleanFiles[0].file)}>Add image</button></div>:<button type="button" className="gallery-upload-empty" onClick={openCleanDialog}><ImageIcon size={20}/><span>Add image</span><small>or drop an image here · max 25 MB</small></button>}<input {...cleanInputProps()} hidden aria-label="Choose image"/>{cleanErrors.map(x=><p className="cms-error" key={x}>{x}</p>)}</div>}<input ref={fileInput} type="file" aria-label="Upload media" accept={Object.keys(mediaTypes).join(',')} disabled={draft.media.length >= 30} onChange={e => { upload(e.target.files?.[0]); e.target.value = ''; }} />
             {draft.media.map(path => <div className="cms-upload" key={path}><Media path={path} preview /><div className="cms-actions">
               {/\.(jpg|png|webp|gif)$/.test(path) && <button type="button" className="cms-button" onClick={() => change('cover_image', draft.cover_image === path ? null : path)}>{draft.cover_image === path ? 'Remove cover' : 'Use as cover'}</button>}
               <button type="button" className="cms-button" onClick={() => {
@@ -189,6 +193,6 @@ export default function Admin() {
               setDraft(null); setSavedEntry(null); setDirty(false); setRevision(value => value + 1); setNotice('Entry deleted.');
             });
           }}>Delete entry</button></div>}
-      </>}</section></div></>}
+      </>}</section></div>}</>}
   </main>;
 }

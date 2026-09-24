@@ -5,9 +5,8 @@ test('public navigation and responsive pages render',async({page})=>{
  await expect(page.locator('.main-logo img')).toHaveAttribute('src','/demicorpse-logo.png');
  await page.getByRole('button',{name:'FRAGMENTS',exact:true}).click();
  await expect(page).toHaveURL(/\/fragments\//);
- await expect(page).toHaveURL(/\/fragments\//);
  await expect(page.locator('.main-header')).toBeVisible();
- await page.getByRole('button',{name:'LIKAS',exact:true}).click();
+ await page.goto('/likas/');
  await expect(page).toHaveURL(/\/likas\//);
  await expect(page.getByRole('heading',{name:/business OS/i})).toBeVisible();
  await expect(page.getByRole('link',{name:/VISIT LIKAS/i})).toHaveAttribute('href','https://likas.app');

@@ -26,9 +26,7 @@
     "tailwind-merge": "latest",
     "tailwindcss": "latest",
     "typescript": "latest",
-    "vite": "latest",
-    "@radix-ui/react-slot": "latest",
-    "class-variance-authority": "latest"
+    "vite": "latest"
   },
   "devDependencies": {
     "@electric-sql/pglite": "^0.5.8",

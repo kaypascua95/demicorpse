@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import ComingSoon from './ComingSoon';
-import { EntryView } from '@/components/CmsContent';
+import { EntryView, Media } from '@/components/CmsContent';
 import FragmentFeed from '@/components/FragmentFeed';
 import TraceSection from '@/components/TraceSection';
 import { entryTimestamp, errorMessage, listEntries, publicCms, type Collection, type Entry } from '@/lib/cms';
@@ -15,7 +15,7 @@ const copy = {
   archive: ['ARCHIVE', 'Everything', 'kept.', 'A chronological record of whatever survived long enough to end up here.'],
 };
 function JournalSqueeze({entries}:{entries:Entry[]}) {
-  const slides:SqueezeSlide[]=entries.slice(0,7).map(entry=>({id:entry.id,title:entry.title,description:entry.excerpt||entry.quote||'Open the journal entry.',href:`/journal/${entry.slug}`,action:'Read entry',overlay:<span>{entryTimestamp(entry)}</span>,image:undefined}));
+  const slides:SqueezeSlide[]=entries.slice(0,7).map(entry=>({id:entry.id,title:entry.title,description:entry.excerpt||entry.quote||'Open the journal entry.',href:`/journal/${entry.slug}`,action:'Read entry',overlay:<span>{entryTimestamp(entry)}</span>,imageNode:entry.cover_image ? <Media path={entry.cover_image} alt={entry.title} /> : undefined}));
   return <section className="journal-featured"><p className="cms-eyebrow">FROM THE JOURNAL</p><SqueezeCarousel slides={slides} label="Journal entries"/></section>;
 }
 export default function CollectionPage({ collection, slug }: { collection: Collection; slug?: string }) {

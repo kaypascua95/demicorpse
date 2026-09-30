@@ -93,7 +93,28 @@ export default function Admin() {
       setError(draft.collection === 'fragments' ? 'Write your fragment before publishing.' : 'Add a title before publishing.'); return;
     }
     void run(async () => {
-      await persist({ ...draft, status });
+      const selectedImage = (draft.collection === 'journal' || draft.collection === 'fragments') ? cleanFiles[0]?.file : undefined;
+      if (!selectedImage) {
+        await persist({ ...draft, status });
+      } else {
+        // Treat a selected image as part of the pending edit. Previously the
+        // entry could publish while the picker still held an unattached image.
+        let base = savedEntry;
+        let current = draft;
+        if (!base) {
+          base = await saveEntry({ ...current, status: 'draft' }, false);
+          current = editable(base);
+        }
+        const path = await uploadMedia(current.id, selectedImage);
+        try {
+          const result = await saveEntry({ ...current, media: [...current.media, path], status }, true, base.updated_at);
+          setSavedEntry(result); setDraft(editable(result)); setDirty(false);
+          setRevision(value => value + 1); clearCleanFiles();
+        } catch (error) {
+          await removeMedia([path]).catch(() => {});
+          throw error;
+        }
+      }
       setNotice(status === 'published' ? 'Published. Your entry is live.' : 'Draft saved. Only you can see it.');
     });
   }

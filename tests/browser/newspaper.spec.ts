@@ -33,6 +33,7 @@ const photograph = {
   date: '2026-10-16',
   location: 'By the window',
   status: 'published',
+  created_at: '2026-10-16T18:00:00Z',
 };
 
 const retiredCopy = /somewhere\s*between\s*alive\s*and\s*archived|the\s*night\s*archive/i;
@@ -76,7 +77,20 @@ async function mockCms(page: Page, state: CmsResponses = 'content', photos: Mock
         const slug = url.searchParams.get('slug');
         data = !slug || slug === `eq.${fragment.slug}` ? [fragment] : [];
       }
-      if (url.pathname.endsWith('/gallery_items')) data = photos;
+      if (url.pathname.endsWith('/gallery_items')) {
+        // Emulate PostgREST ordering instead of handing the UI a pre-sorted
+        // answer: a date-based query must fail the latest-upload regression.
+        const order = (url.searchParams.get('order') || '').split(',');
+        data = [...photos].sort((left, right) => {
+          for (const clause of order) {
+            const [column, direction] = clause.split('.');
+            const key = column as keyof MockPhotograph;
+            const comparison = String(left[key] ?? '').localeCompare(String(right[key] ?? ''));
+            if (comparison) return direction === 'desc' ? -comparison : comparison;
+          }
+          return 0;
+        }).slice(0, Number(url.searchParams.get('limit') || photos.length));
+      }
     }
     const single = request.headers().accept?.includes('application/vnd.pgrst.object+json');
     await route.fulfill({ status: 200, headers, json: single ? data[0] ?? null : data });
@@ -84,6 +98,7 @@ async function mockCms(page: Page, state: CmsResponses = 'content', photos: Mock
   return {
     requests,
     setState(nextState: CmsResponses) { state = nextState; },
+    setPhotos(nextPhotos: MockPhotograph[]) { photos = nextPhotos; },
   };
 }
 
@@ -103,7 +118,7 @@ async function expectInkComplete(page: Page, timeout = 8_000) {
   const ink = page.locator('.ink-calligraphy');
   await expect(ink).toHaveCount(1);
   await expect(ink.locator('.ink-calligraphy-readable')).toHaveText(calligraphyPhrase);
-  await expect(ink).toHaveAttribute('data-ink-started', 'true', { timeout });
+  await expect(ink).toHaveAttribute('data-ink-phase', /^(hold|static)$/, { timeout });
   await expect.poll(() => ink.locator('.ink-calligraphy-mask').evaluateAll(paths => paths.length > 0 && paths.every(path => {
     const style = getComputedStyle(path);
     return (style.strokeDasharray === 'none' || parseFloat(style.strokeDasharray) >= 0.999)
@@ -169,6 +184,7 @@ test('the direct home route presents real published fragments and photographs', 
   expect(fragmentRequest?.searchParams.get('collection')).toBe('eq.fragments');
   expect(fragmentRequest?.searchParams.get('status')).toBe('eq.published');
   expect(galleryRequest?.searchParams.get('status')).toBe('eq.published');
+  expect(galleryRequest?.searchParams.get('order')).toBe('created_at.desc,id.desc');
   await expectNoHorizontalOverflow(page);
 
   // Trigger the real once-only reveals before capturing the entire page;
@@ -187,6 +203,8 @@ test('the direct home route presents real published fragments and photographs', 
     window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
   });
   await expect.poll(() => page.evaluate(() => window.scrollY)).toBe(0);
+  // Capture a real completed hold, not an intermediate or forced-finished frame.
+  await expectInkComplete(page);
   const screenshotPath = testInfo.outputPath(`newspaper-fixture-${testInfo.project.name}.png`);
   await page.screenshot({ path: screenshotPath, fullPage: true });
   await testInfo.attach(`Newspaper ${testInfo.project.name} (mock CMS fixtures, not live content)`, {
@@ -223,9 +241,9 @@ test('revised Dear Moon copy and red-ink calligraphy remain correct across home 
   await expect(page.locator('body')).not.toContainText(retiredCopy);
   await page.getByRole('button', { name: 'DemiCorpse home', exact: true }).click();
   await expectNewspaper(page);
-  // A route remount must show the completed inscription immediately rather
-  // than beginning its multi-second write-on sequence for a second time.
-  await expectInkComplete(page, 1_000);
+  // Remounts may begin a fresh loop; they must still produce readable ink.
+  await ink.scrollIntoViewIfNeeded();
+  await expectInkComplete(page);
 });
 
 test('newspaper columns and masthead fit narrow, tablet, and wide viewports', async ({ page }) => {
@@ -250,8 +268,45 @@ test('newspaper columns and masthead fit narrow, tablet, and wide viewports', as
       };
     }), { message: `The original masthead logo must fit at ${width}px` })
       .toEqual({ loaded: true, fitsLockup: true, withinViewport: true });
+    // The four calligraphy lines stay stacked and within the Dear Moon
+    // column even where body overflow hiding could mask a clipped flourish.
+    const ink = page.locator('.newspaper-moon .ink-calligraphy');
+    await expect(ink.locator('.ink-calligraphy-line')).toHaveCount(4);
+    expect(await ink.evaluate(element => {
+      const bounds = element.getBoundingClientRect();
+      const moon = element.closest('.newspaper-moon')!.getBoundingClientRect();
+      const lines = Array.from(element.querySelectorAll('.ink-calligraphy-line')).map(line => line.getBoundingClientRect());
+      return bounds.left >= moon.left - 1 && bounds.right <= moon.right + 1
+        && bounds.left >= -1 && bounds.right <= innerWidth + 1
+        && lines.every((line, index) => line.width > 0 && line.height > 0
+          && (!index || line.top > lines[index - 1].top));
+    }), `Multiline calligraphy should fit at ${width}px`).toBe(true);
     await expectNoHorizontalOverflow(page);
   }
+});
+
+test('the calligraphy writes, holds legibly, resets, and writes again inside Dear Moon', async ({ page }) => {
+  await mockCms(page);
+  await page.goto('/?enter=1');
+  const ink = page.locator('.newspaper-moon-bottom .ink-calligraphy');
+  await expect(ink).toHaveCount(1);
+  await expect(page.locator('.newspaper-inscription')).toHaveCount(0);
+  await ink.scrollIntoViewIfNeeded();
+  await expect(ink).toHaveAttribute('data-ink-playing', 'true');
+  await expect(ink).toHaveAttribute('data-ink-phase', 'drawing');
+  await expect.poll(() => ink.locator('.ink-calligraphy-mask').evaluateAll(paths =>
+    paths.some(path => Number.parseFloat(getComputedStyle(path).strokeDashoffset) > 0.1)))
+    .toBe(true);
+  await expectInkComplete(page);
+  const holdStarted = Date.now();
+  await expect(ink.locator('.ink-calligraphy-lines')).toHaveCSS('opacity', '1');
+  await expect.poll(() => ink.getAttribute('data-ink-phase'), { timeout: 6_000, intervals: [50, 100] }).toBe('reset');
+  expect(Date.now() - holdStarted, 'The completed phrase needs a meaningful readable pause').toBeGreaterThan(2_500);
+  await expect(ink).toHaveAttribute('data-ink-phase', 'drawing', { timeout: 2_000 });
+  await expect.poll(() => ink.locator('.ink-calligraphy-mask').evaluateAll(paths =>
+    paths.some(path => Number.parseFloat(getComputedStyle(path).strokeDashoffset) > 0.1)))
+    .toBe(true);
+  await expectInkComplete(page);
 });
 
 test('fragment links, home logo, and browser history retain the same film', async ({ page }) => {
@@ -419,6 +474,101 @@ test('a mixed-result retry removes stale Storage photographs and restores the ex
   await expectNewspaper(page);
 });
 
+test('the hero follows the latest upload, refreshes on focus, and retains the last good photograph on background error', async ({ page }) => {
+  const olderUpload = { ...photograph, id: 'photo-a', caption: 'Older upload with a newer photo date',
+    date: '2026-12-31', created_at: '2026-10-15T18:00:00Z' };
+  const sameTimeLowerId = { ...photograph, id: 'photo-b', caption: 'Same upload time, earlier identifier',
+    date: '2026-12-30', created_at: '2026-10-16T18:00:00Z' };
+  const latestUpload = { ...photograph, id: 'photo-c', caption: 'Latest uploaded photograph',
+    date: '2020-01-01', created_at: '2026-10-16T18:00:00Z' };
+  const cms = await mockCms(page, 'content', [olderUpload, sameTimeLowerId, latestUpload]);
+  const galleryRequests = () => cms.requests.filter(url => url.pathname.endsWith('/gallery_items'));
+  await page.goto('/?enter=1');
+  await expectNewspaper(page);
+  const cover = page.locator('.newspaper-cover-link img');
+  await expect(cover).toHaveAttribute('alt', latestUpload.caption);
+  await expect(page.locator('.newspaper-cover figcaption')).toContainText(latestUpload.caption);
+  expect(galleryRequests()[0].searchParams.get('status')).toBe('eq.published');
+  expect(galleryRequests()[0].searchParams.get('order')).toBe('created_at.desc,id.desc');
+
+  // Simulate a completed CMS upload without writing to any real service.
+  const newUpload = { ...latestUpload, id: 'photo-d', caption: 'A photograph uploaded while home stayed open',
+    image_url: '', storage_path: 'fixture/new-upload.png', date: '2019-01-01', created_at: '2026-10-17T18:00:00Z' };
+  await page.route(url => url.pathname === '/storage/v1/object/cms-media/fixture/new-upload.png', async route => {
+    const headers = { 'access-control-allow-origin': '*', 'access-control-allow-headers': '*' };
+    if (route.request().method() === 'OPTIONS') {
+      await route.fulfill({ status: 204, headers });
+      return;
+    }
+    await route.fulfill({ status: 200, headers, contentType: 'image/png', path: 'public/hero-still.png' });
+  });
+  cms.setPhotos([olderUpload, latestUpload, newUpload]);
+  await page.evaluate(() => window.dispatchEvent(new Event('focus')));
+  await expect(cover).toHaveAttribute('alt', newUpload.caption);
+  await expect(cover).toHaveAttribute('src', /^blob:/);
+  const currentBlob = (await cover.getAttribute('src'))!;
+  await expect.poll(() => cover.evaluate(image => (image as HTMLImageElement).naturalWidth)).toBeGreaterThan(0);
+  await expect(page.locator('.newspaper-contact-sheet img').first()).toHaveAttribute('alt', newUpload.caption);
+
+  cms.setState({ fragments: 'content', gallery: 'error' });
+  const previousRequests = galleryRequests().length;
+  // Waiting for the fourth response proves the normal 503 retry sequence
+  // finishes, rather than checking the old image only while a retry is pending.
+  const terminalResponse = page.waitForResponse(response => response.status() === 503
+    && new URL(response.url()).pathname.endsWith('/gallery_items')
+    && galleryRequests().length >= previousRequests + 4, { timeout: 15_000 });
+  await page.evaluate(() => window.dispatchEvent(new Event('focus')));
+  await (await terminalResponse).finished();
+  await expect(cover).toHaveAttribute('src', currentBlob);
+  await expect(cover).toHaveAttribute('alt', newUpload.caption);
+  await expect(page.locator('.newspaper-contact-sheet img').first()).toHaveAttribute('src', currentBlob);
+  expect(await page.evaluate(async url => (await fetch(url)).ok, currentBlob), 'The retained image URL must not be revoked').toBe(true);
+  await expect.poll(() => cover.evaluate(image => (image as HTMLImageElement).naturalWidth)).toBeGreaterThan(0);
+
+  // A later focus can recover normally; a background error must not strand
+  // an in-flight guard or force the visitor to reload the entire document.
+  cms.setState('content');
+  cms.setPhotos([latestUpload]);
+  await page.evaluate(() => window.dispatchEvent(new Event('focus')));
+  await expect(cover).toHaveAttribute('alt', latestUpload.caption);
+  await expect.poll(() => page.evaluate(async url => {
+    try { return (await fetch(url)).ok; } catch { return false; }
+  }, currentBlob), { message: 'Successfully replaced Storage URLs should be released after the next render' }).toBe(false);
+});
+
+test('the open home polls while visible and refreshes on return without polling a hidden tab', async ({ page }) => {
+  const cms = await mockCms(page);
+  await page.clock.install();
+  await page.goto('/?enter=1');
+  const cover = page.locator('.newspaper-cover-link img');
+  await expect(cover).toHaveAttribute('alt', photograph.caption);
+  // Playwright's clock advances the application's actual interval. No wait
+  // for real CMS changes or a wall-clock 30-second pause is needed.
+  await page.clock.pauseAt(new Date(Date.now() + 1_000));
+  const polledUpload = { ...photograph, id: 'polled-upload', caption: 'New upload found by visible polling',
+    created_at: '2026-10-18T18:00:00Z' };
+  cms.setPhotos([polledUpload]);
+  await page.clock.fastForward(30_001);
+  await expect(cover).toHaveAttribute('alt', polledUpload.caption);
+
+  await page.evaluate(() => {
+    Object.defineProperty(document, 'visibilityState', { configurable: true, get: () => 'hidden' });
+    document.dispatchEvent(new Event('visibilitychange'));
+  });
+  const hiddenRequestCount = cms.requests.filter(url => url.pathname.endsWith('/gallery_items')).length;
+  const returnedUpload = { ...polledUpload, caption: 'New upload found on tab return', created_at: '2026-10-19T18:00:00Z' };
+  cms.setPhotos([returnedUpload]);
+  await page.clock.fastForward(60_001);
+  expect(cms.requests.filter(url => url.pathname.endsWith('/gallery_items')).length).toBe(hiddenRequestCount);
+  await expect(cover).toHaveAttribute('alt', polledUpload.caption);
+
+  await page.evaluate(() => {
+    Object.defineProperty(document, 'visibilityState', { configurable: true, get: () => 'visible' });
+    document.dispatchEvent(new Event('visibilitychange'));
+  });
+  await expect(cover).toHaveAttribute('alt', returnedUpload.caption);
+});
+
 test('reduced-motion visitors can enter and use navigation with the keyboard', async ({ page }) => {
   await mockCms(page);
   await page.emulateMedia({ reducedMotion: 'reduce' });
@@ -431,6 +581,10 @@ test('reduced-motion visitors can enter and use navigation with the keyboard', a
   await expectNewspaper(page);
   expect(await page.evaluate(() => matchMedia('(prefers-reduced-motion: reduce)').matches)).toBe(true);
   await expectInkComplete(page, 1_000);
+  await expect(page.locator('.ink-calligraphy')).toHaveAttribute('data-ink-phase', 'static');
+  await expect(page.locator('.ink-calligraphy')).toHaveAttribute('data-ink-playing', 'false');
+  expect(await page.locator('.ink-calligraphy-lines').evaluate(svg =>
+    svg.getAnimations({ subtree: true }).some(animation => animation.playState === 'running'))).toBe(false);
   await expectTextRevealed(page, '.newspaper-reveal', 1_000);
   await expect(page.locator('body')).not.toContainText(retiredCopy);
 

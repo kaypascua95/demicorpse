@@ -4,15 +4,15 @@ function makeEntry(collection: 'journal' | 'fragments' | 'archive', id: string, 
   return {
     id, collection, title, slug, content, excerpt: `A fixture excerpt for ${title.toLowerCase()}.`,
     game: '', type: '', description: content, quote: '', video_url: '', duration: '',
-    featured: false, media_layout: 'full', cover_image: null, media: [],
+    featured: false, media_layout: 'full', cover_image: null as string | null, media: [],
     date: '2026-10-16', status: 'published', tags: [],
     published_at: '2026-10-16T18:00:00Z', created_at: '2026-10-16T18:00:00Z', updated_at: '2026-10-16T18:00:00Z',
   };
 }
 
 const journal = [
-  makeEntry('journal', 'journal-one', 'A window after rain', 'fixture-window-after-rain', 'The first fixture journal entry keeps an ordinary evening.'),
-  makeEntry('journal', 'journal-two', 'The long way home', 'fixture-long-way-home', 'The second fixture journal entry follows another road.'),
+  { ...makeEntry('journal', 'journal-one', 'A window after rain', 'fixture-window-after-rain', 'The first fixture journal entry keeps an ordinary evening.'), cover_image: 'journal-one/cover.png' },
+  { ...makeEntry('journal', 'journal-two', 'The long way home', 'fixture-long-way-home', 'The second fixture journal entry follows another road.'), cover_image: 'journal-two/cover.png' },
 ];
 const fragments = [
   makeEntry('fragments', 'fragment-one', 'A small observation', 'fixture-small-observation', 'The light stayed a little longer than expected.'),
@@ -53,6 +53,15 @@ async function mockSectionContent(page: Page) {
     const single = request.headers().accept?.includes('application/vnd.pgrst.object+json');
     await route.fulfill({ status: 200, headers, json: single ? rows[0] ?? null : rows });
   });
+  await page.route(url => /^\/storage\/v1\/object\/cms-media\/journal-(?:one|two)\/cover\.png$/.test(url.pathname), async route => {
+    const headers = { 'access-control-allow-origin': '*', 'access-control-allow-headers': '*' };
+    if (route.request().method() === 'OPTIONS') {
+      await route.fulfill({ status: 204, headers });
+      return;
+    }
+    // Real image bytes exercise Storage download -> blob -> rendered image.
+    await route.fulfill({ status: 200, headers, contentType: 'image/png', path: 'public/hero-still.png' });
+  });
   await page.route(url => url.pathname === '/.netlify/functions/stream-vods', route =>
     route.fulfill({ status: 200, json: { videos } }));
   await page.route(url => url.hostname === 'www.youtube-nocookie.com' || url.hostname === 'player.twitch.tv', route =>
@@ -86,6 +95,29 @@ async function expectSectionLayout(page: Page) {
   }), { message: 'The original masthead image should load and fit its lockup' }).toBe(true);
   await expect.poll(() => page.evaluate(() => document.documentElement.scrollWidth <= innerWidth))
     .toBe(true);
+}
+
+async function expectJournalCovers(page: Page) {
+  const images = page.locator('.journal-squeeze-panel img');
+  await expect(images).toHaveCount(journal.length);
+  for (const [index, entry] of journal.entries()) {
+    await expect(images.nth(index)).toHaveAttribute('src', /^blob:/);
+    await expect(images.nth(index)).toHaveAttribute('alt', entry.title);
+  }
+  await expect.poll(() => images.evaluateAll(nodes => nodes.every(node => {
+    const image = node as HTMLImageElement;
+    const bounds = image.getBoundingClientRect();
+    return image.complete && image.naturalWidth > 0 && image.naturalHeight > 0
+      && bounds.width > 0 && bounds.height > 0;
+  })), { message: 'Uploaded journal cover bytes should actually decode and render' }).toBe(true);
+  return images.evaluateAll(nodes => nodes.map(node => (node as HTMLImageElement).src));
+}
+
+async function expectReleasedBlobs(page: Page, urls: string[]) {
+  await expect.poll(() => page.evaluate(async values => Promise.all(values.map(async url => {
+    try { return (await fetch(url)).ok; } catch { return false; }
+  })), urls), { message: 'Unmounted carousel cover URLs should be revoked, not leaked or reused' })
+    .toEqual(urls.map(() => false));
 }
 
 async function attachFixtureScreenshot(page: Page, testInfo: TestInfo, section: string) {
@@ -170,6 +202,7 @@ test('journal preserves Squeeze controls, arrow keys, and chronological view', a
   const activeCopy = carousel.locator('.journal-squeeze-copy-item.is-open');
   const tabs = carousel.getByRole('tab');
   await expect(tabs).toHaveCount(2);
+  const originalCovers = await expectJournalCovers(page);
   await expect(activeCopy).toContainText(journal[0].title);
   await expect(tabs.nth(0)).toHaveAttribute('aria-selected', 'true');
 
@@ -188,11 +221,91 @@ test('journal preserves Squeeze controls, arrow keys, and chronological view', a
   await expect(page.locator('.dc-timeline-item')).toHaveCount(2);
   await expect(page.locator('.dc-timeline')).toContainText(journal[0].title);
   await expect(carousel).toHaveCount(0);
+  await expectReleasedBlobs(page, originalCovers);
   await page.getByRole('button', { name: 'FEATURED', exact: true }).click();
   await expect(carousel).toBeVisible();
   await expect(tabs).toHaveCount(2);
   await expect(activeCopy.getByRole('link', { name: /Read entry/ })).toHaveAttribute('href', `/journal/${journal[0].slug}`);
+  const remountedCovers = await expectJournalCovers(page);
+  expect(remountedCovers.every(url => !originalCovers.includes(url)), 'A remounted carousel must not reuse revoked covers').toBe(true);
   await attachFixtureScreenshot(page, testInfo, 'journal');
+  await page.getByRole('button', { name: 'DemiCorpse home', exact: true }).click();
+  await expect(page.locator('main.newspaper-page')).toBeVisible();
+  await expectReleasedBlobs(page, remountedCovers);
+});
+
+test('missing or failed journal covers remain honest text-only panels with working controls', async ({ page }) => {
+  await page.route(url => url.pathname.endsWith('/rest/v1/cms_entries') && url.searchParams.get('collection') === 'eq.journal', async route => {
+    const headers = { 'access-control-allow-origin': '*', 'access-control-allow-headers': '*' };
+    if (route.request().method() === 'OPTIONS') {
+      await route.fulfill({ status: 204, headers });
+      return;
+    }
+    await route.fulfill({ status: 200, headers, json: [
+      { ...journal[0], cover_image: 'journal-one/missing.png' },
+      { ...journal[1], cover_image: null },
+    ] });
+  });
+  let failedCoverRequests = 0;
+  await page.route(url => url.pathname.endsWith('/storage/v1/object/cms-media/journal-one/missing.png'), async route => {
+    const headers = { 'access-control-allow-origin': '*', 'access-control-allow-headers': '*' };
+    if (route.request().method() === 'OPTIONS') {
+      await route.fulfill({ status: 204, headers });
+      return;
+    }
+    failedCoverRequests++;
+    await route.fulfill({ status: 404, headers, json: { statusCode: '404', error: 'not_found', message: 'Fixture cover is unavailable' } });
+  });
+  await page.goto('/journal/');
+  const carousel = page.locator('.journal-squeeze');
+  await expect(carousel.getByRole('tab')).toHaveCount(2);
+  await expect.poll(() => failedCoverRequests).toBeGreaterThan(0);
+  await expect(carousel.locator('img')).toHaveCount(0);
+  await carousel.getByRole('button', { name: 'Next', exact: true }).click();
+  await expect(carousel.locator('.journal-squeeze-copy-item.is-open')).toContainText(journal[1].title);
+  await carousel.getByRole('button', { name: 'Previous', exact: true }).click();
+  await expect(carousel.locator('.journal-squeeze-copy-item.is-open')).toContainText(journal[0].title);
+  await expect(carousel.locator('img')).toHaveCount(0);
+});
+
+test('journal cover downloads finishing after the featured view unmounts do not create stale blobs', async ({ page }) => {
+  await page.addInitScript(() => {
+    const originalCreate = URL.createObjectURL.bind(URL);
+    (window as typeof window & { fixtureCreatedBlobs: string[] }).fixtureCreatedBlobs = [];
+    URL.createObjectURL = value => {
+      const url = originalCreate(value);
+      (window as typeof window & { fixtureCreatedBlobs: string[] }).fixtureCreatedBlobs.push(url);
+      return url;
+    };
+  });
+  let release!: () => void;
+  const pending = new Promise<void>(resolve => { release = resolve; });
+  let requested = 0;
+  await page.route(url => /^\/storage\/v1\/object\/cms-media\/journal-(?:one|two)\/cover\.png$/.test(url.pathname), async route => {
+    const headers = { 'access-control-allow-origin': '*', 'access-control-allow-headers': '*' };
+    if (route.request().method() === 'OPTIONS') {
+      await route.fulfill({ status: 204, headers });
+      return;
+    }
+    requested++;
+    await pending;
+    await route.fulfill({ status: 200, headers, contentType: 'image/png', path: 'public/hero-still.png' });
+  });
+  await page.goto('/journal/');
+  await expect(page.locator('.journal-squeeze')).toBeVisible();
+  await expect.poll(() => requested).toBe(2);
+  await page.getByRole('button', { name: 'CHRONOLOGICAL', exact: true }).click();
+  await expect(page.locator('.journal-squeeze')).toHaveCount(0);
+  const responses = journal.map(entry => page.waitForResponse(response =>
+    new URL(response.url()).pathname.endsWith(`/cms-media/${entry.cover_image}`) && response.request().method() === 'GET'));
+  release();
+  await Promise.all((await Promise.all(responses)).map(response => response.finished()));
+  // Give the completed fetch continuations a render turn; no long arbitrary
+  // sleep and no app state is replaced by the test.
+  await page.evaluate(() => new Promise<void>(resolve => requestAnimationFrame(() => requestAnimationFrame(() => resolve()))));
+  expect(await page.evaluate(() => (window as typeof window & { fixtureCreatedBlobs: string[] }).fixtureCreatedBlobs)).toEqual([]);
+  await expect(page.locator('.dc-timeline-item')).toHaveCount(2);
+  await expect(page.locator('.journal-squeeze')).toHaveCount(0);
 });
 
 test('fragments retains the marquee carousel and chronological timeline', async ({ page }, testInfo) => {

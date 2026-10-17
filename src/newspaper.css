@@ -223,6 +223,11 @@
   .newspaper-reveal { opacity: 1 !important; transform: none !important; filter: none !important; }
   .newspaper-section-paper .page-head > :is(h1, p, span) { animation: none; }
 }
-.newspaper-inscription { position: relative; padding: 5px 30px 10px; background: var(--paper); border-block: 1px solid #8d887b; }
-.newspaper-inscription .ink-calligraphy { width: min(100%, 900px); }
-@media (max-width: 700px) { .newspaper-inscription { padding: 8px 20px 10px; } }
+/* Keep the handwritten note in the lower-right margin of Dear Moon, not in
+   a banner above the photograph. The four lines remain legible on mobile. */
+.newspaper-moon-ink { margin-bottom: 16px; }
+@media (max-width: 700px) {
+  .newspaper-moon h2 { grid-row: 2; }
+  .newspaper-moon-bottom { grid-column: 1/-1; padding-top: 0; }
+  .newspaper-moon-ink { width: min(70%, 195px); margin-top: -8px; }
+}

@@ -1,29 +1,23 @@
-/* Code-native handwriting: its mask follows the pen, not a rectangular wipe. */
+/* A compact four-line marginal inscription, at every viewport width. */
 .ink-calligraphy {
   --calligraphy-ink: #8e302f;
   position: relative;
-  width: min(100%, 1050px);
+  width: min(100%, 225px);
   min-width: 0;
-  margin-inline: auto;
+  margin-inline: auto 0;
+  padding: 12px 8px 16px;
   color: var(--calligraphy-ink);
   pointer-events: none;
 }
 .ink-calligraphy-lines {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  width: 100%;
-  transform: rotate(-3deg);
-  transform-origin: center;
-}
-.ink-calligraphy-line {
   display: block;
-  flex-basis: 0;
-  min-width: 0;
-  width: 0;
+  width: 100%;
   height: auto;
   overflow: visible;
+  transform: rotate(-9deg);
+  transform-origin: 65% 55%;
 }
+.ink-calligraphy-line { overflow: visible; }
 .ink-calligraphy-readable {
   position: absolute;
   width: 1px;
@@ -35,14 +29,8 @@
   white-space: nowrap;
   border: 0;
 }
-@media (max-width: 640px) {
-  .ink-calligraphy { width: min(100%, 470px); padding: 6px 9px; }
-  .ink-calligraphy-lines { display: block; transform: rotate(-3deg); }
-  .ink-calligraphy-line { width: 100%; }
-  .ink-calligraphy-line-1 { width: 76%; margin-left: 1%; margin-bottom: -5px; }
-  .ink-calligraphy-line-2 { margin-left: 0; }
-}
 @media (prefers-reduced-motion: reduce) {
+  .ink-calligraphy-lines { opacity: 1 !important; }
   .ink-calligraphy-mask {
     stroke-dasharray: none !important;
     stroke-dashoffset: 0 !important;

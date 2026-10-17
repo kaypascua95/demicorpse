@@ -3,14 +3,10 @@ import { InkCalligraphy } from '@/components/InkCalligraphy';
 import { useEffect, useState, type CSSProperties } from 'react';
 import GradientMenu from '@/components/ui/gradient-menu';
 import { NewspaperMasthead } from '@/components/NewspaperMasthead';
-import { listEntries, publicCms, type Entry } from '@/lib/cms';
+import { listEntries, type Entry } from '@/lib/cms';
+import { useLatestGallery } from '@/hooks/useLatestGallery';
 import { SiteLink } from '@/lib/navigation';
 
-type Photograph = {
-  id: string; caption: string; image_url: string; storage_path: string | null;
-  date: string; location: string;
-};
-type ResolvedPhotograph = Photograph & { src: string };
 type LoadState = 'loading' | 'ready' | 'error';
 
 function formatDate(date: string) {
@@ -26,51 +22,23 @@ function plainText(value: string) {
 
 export default function NewspaperHome() {
   const [fragments, setFragments] = useState<Entry[]>([]);
-  const [photographs, setPhotographs] = useState<ResolvedPhotograph[]>([]);
   const [fragmentState, setFragmentState] = useState<LoadState>('loading');
-  const [galleryState, setGalleryState] = useState<LoadState>('loading');
   const [attempt, setAttempt] = useState(0);
+  const { photographs, galleryState } = useLatestGallery(attempt);
 
   useEffect(() => {
     let active = true;
-    const objectUrls: string[] = [];
-    // A retry replaces this edition rather than retaining stale CMS rows or
-    // object URLs revoked by the previous attempt's cleanup.
     setFragments([]);
-    setPhotographs([]);
     setFragmentState('loading');
-    setGalleryState('loading');
     listEntries('fragments').then(entries => {
       if (active) { setFragments(entries.slice(0, 3)); setFragmentState('ready'); }
     }).catch(() => { if (active) setFragmentState('error'); });
-    async function loadPhotographs() {
-      if (!publicCms) { if (active) setGalleryState('ready'); return; }
-      const { data, error } = await publicCms.from('gallery_items')
-        .select('id,caption,image_url,storage_path,date,location')
-        .eq('status', 'published').order('date', { ascending: false }).order('id').limit(4);
-      if (error) throw error;
-      const resolved = await Promise.all((data as Photograph[]).map(async photo => {
-        if (photo.image_url) return { ...photo, src: photo.image_url };
-        if (!photo.storage_path) return null;
-        const { data: image, error: imageError } = await publicCms!.storage.from('cms-media').download(photo.storage_path);
-        if (imageError || !image || !active) return null;
-        const src = URL.createObjectURL(image);
-        objectUrls.push(src);
-        return { ...photo, src };
-      }));
-      if (active) {
-        setPhotographs(resolved.filter((photo): photo is ResolvedPhotograph => photo !== null));
-        setGalleryState('ready');
-      }
-    }
-    loadPhotographs().catch(() => { if (active) setGalleryState('error'); });
-    return () => { active = false; objectUrls.forEach(URL.revokeObjectURL); };
+    return () => { active = false; };
   }, [attempt]);
 
   const cover = photographs[0];
   return <main className="newspaper-page" id="newspaper" tabIndex={-1}>
     <NewspaperMasthead home />
-    <div className="newspaper-inscription"><InkCalligraphy /></div>
 
     <section className="newspaper-feature" aria-label="From the archive">
       <figure className="newspaper-cover">
@@ -88,6 +56,7 @@ export default function NewspaperHome() {
         <span className="newspaper-short-rule" aria-hidden="true" />
         <EditorialReveal as="p" className="newspaper-moon-note" delay={0.3}>A collection of prose and poetry, coming soon.</EditorialReveal>
         <div className="newspaper-moon-bottom">
+          <InkCalligraphy className="newspaper-moon-ink" />
           <SiteLink className="newspaper-text-link" href="/dear-moon/">Visit Dear Moon <span aria-hidden="true">↗</span></SiteLink>
         </div>
       </aside>

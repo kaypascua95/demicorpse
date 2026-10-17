@@ -15,7 +15,30 @@ const copy = {
   archive: ['ARCHIVE', 'Everything', 'kept.', 'A chronological record of whatever survived long enough to end up here.'],
 };
 function JournalSqueeze({entries}:{entries:Entry[]}) {
-  const slides:SqueezeSlide[]=entries.slice(0,7).map(entry=>({id:entry.id,title:entry.title,description:entry.excerpt||entry.quote||'Open the journal entry.',href:`/journal/${entry.slug}`,action:'Read entry',overlay:<span>{entryTimestamp(entry)}</span>,image:undefined}));
+  const [covers, setCovers] = useState<{ entries: Entry[]; urls: Record<string, string> }>({ entries, urls: {} });
+  useEffect(() => {
+    let active = true;
+    const objectUrls: string[] = [];
+    setCovers({ entries, urls: {} });
+    const paths = new Set(entries.slice(0, 7).flatMap(entry => entry.cover_image ? [entry.cover_image] : []));
+    paths.forEach(path => {
+      publicCms?.storage.from('cms-media').download(path).then(({ data, error }) => {
+        if (!active || error || !data) return;
+        const url = URL.createObjectURL(data);
+        objectUrls.push(url);
+        setCovers(current => active && current.entries === entries
+          ? { entries, urls: { ...current.urls, [path]: url } }
+          : current);
+      }).catch(() => { /* Keep the text-only panel when a cover is unavailable. */ });
+    });
+    return () => {
+      active = false;
+      objectUrls.forEach(url => URL.revokeObjectURL(url));
+    };
+  }, [entries]);
+  // Do not flash an old cover between a new entry list rendering and its effect.
+  const images = covers.entries === entries ? covers.urls : {};
+  const slides:SqueezeSlide[]=entries.slice(0,7).map(entry=>({id:entry.id,title:entry.title,description:entry.excerpt||entry.quote||'Open the journal entry.',href:`/journal/${entry.slug}`,action:'Read entry',overlay:<span>{entryTimestamp(entry)}</span>,image:entry.cover_image?images[entry.cover_image]:undefined,imageAlt:entry.title}));
   return <section className="journal-featured"><p className="cms-eyebrow">FROM THE JOURNAL</p><SqueezeCarousel slides={slides} label="Journal entries"/></section>;
 }
 export default function CollectionPage({ collection, slug }: { collection: Collection; slug?: string }) {

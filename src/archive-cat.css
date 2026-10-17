@@ -25,7 +25,7 @@
   min-height: 44px;
   max-width: 100%;
   padding: 8px;
-  border: 1px solid currentColor;
+  border: 0;
   border-radius: 0;
   background: transparent;
   color: var(--oxblood, #722b2a);
@@ -34,14 +34,15 @@
   cursor: pointer;
   overflow-wrap: anywhere;
 }
-.archive-cat-toggle > span { font: 22px/1 Georgia, serif; }
+.archive-cat-toggle > span { font: 14px/1 Georgia, serif; opacity: .65; }
 .archive-cat-dock:not(:has(.archive-cat-sprite)) { grid-template-columns: 76px; }
 
 .archive-cat-dock .archive-cat-toggle:hover {
-  background: var(--paper, #eee8db);
+  background: transparent;
   text-decoration: underline;
   text-underline-offset: 3px;
 }
+.archive-cat-dock .archive-cat-toggle:hover > span { opacity: 1; }
 
 .archive-cat-dock .archive-cat-toggle:focus-visible {
   outline: 2px solid currentColor;

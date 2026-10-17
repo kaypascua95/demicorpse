@@ -81,15 +81,22 @@ test('approved Ko-fi and Spotify destinations stay private until visitor interac
   await widgets.scrollIntoViewIfNeeded();
   await expect(widgets.getByRole('heading', { name: 'Support the archive', exact: true })).toBeVisible();
   await expect(widgets.getByRole('heading', { name: 'Listening corner', exact: true })).toBeVisible();
-  await expect(widgets.locator('.archive-corner-label')).toHaveText(['04 / Support', '05 / Spotify']);
+  await expect(widgets.locator('.archive-corner-label')).toHaveText(['004 / Support', '005 / Spotify']);
+  await expect(page.locator('.newspaper-moon > .newspaper-label')).toHaveText('001 / Coming Soon');
+  await expect(page.locator('.newspaper-fragments .newspaper-section-head h2')).toHaveText('002 / Recent fragments');
+  await expect(page.locator('.newspaper-contact-sheet .newspaper-section-head h2')).toHaveText('003 / Gallery');
+  await expect(page.locator('#elsewhere .newspaper-label')).toHaveText('006 / Elsewhere');
   const colophon = page.locator('.newspaper-bottom-colophon');
   await expect(colophon).toContainText('DemiCorpse');
   await expect(colophon.getByRole('link', { name: 'Colophon ↗', exact: true })).toHaveAttribute('href', '/colophon/');
   expect(await page.locator('.newspaper-closing').evaluate(element => {
     const sections = element.querySelector('.archive-corners')!;
+    const elsewhere = element.querySelector('#elsewhere')!;
     const footer = element.querySelector('.newspaper-bottom-colophon')!;
-    return element.lastElementChild === footer && footer.previousElementSibling === sections
-      && footer.getBoundingClientRect().top >= sections.getBoundingClientRect().bottom;
+    return element.lastElementChild === footer && footer.previousElementSibling === elsewhere
+      && elsewhere.previousElementSibling === sections
+      && elsewhere.getBoundingClientRect().top >= sections.getBoundingClientRect().bottom
+      && footer.getBoundingClientRect().top >= elsewhere.getBoundingClientRect().bottom;
   })).toBe(true);
   await expect(widgets.getByText('Preview', { exact: true })).toHaveCount(0);
   await expect(widgets.getByText('femme fatale', { exact: true })).toBeVisible();
@@ -97,14 +104,25 @@ test('approved Ko-fi and Spotify destinations stay private until visitor interac
   await expect(support).toHaveAttribute('href', 'https://ko-fi.com/demic0rpse');
   await expect(support).toHaveAttribute('target', '_blank');
   await expect(support).toHaveAttribute('rel', 'noopener noreferrer');
-  await expect(support).toHaveClass(/cms-button cms-primary/);
+  await expect(support).toHaveClass(/flow-button flow-link/);
   expect(await support.evaluate(element => {
     const style = getComputedStyle(element);
     return style.backgroundColor === 'rgb(114, 43, 42)'
       && style.color === 'rgb(239, 232, 220)'
-      && style.borderRadius === '0px' && style.fontFamily.includes('DM Mono')
+      && style.borderRadius === '9999px' && style.fontFamily.includes('DM Mono')
       && element.getBoundingClientRect().height >= 44;
   })).toBe(true);
+  await expect.poll(() => support.locator('.flow-link-fill').evaluate(element => element.getBoundingClientRect().width)).toBe(0);
+  if (!testInfo.project.use.isMobile) {
+    await support.hover();
+    await expect(support).toHaveCSS('border-radius', '12px');
+    await expect.poll(() => support.locator('.flow-link-fill').evaluate(element =>
+      Math.abs(element.getBoundingClientRect().width - element.parentElement!.clientWidth),
+    )).toBeLessThan(1);
+    await expect(support.locator('.flow-link-content')).toHaveCSS('color', 'rgb(114, 43, 42)');
+    await page.mouse.move(0, 0);
+    await expect(support).toHaveCSS('border-radius', '9999px');
+  }
   await expect(widgets.getByRole('button', { name: 'Support link coming soon', exact: true })).toHaveCount(0);
   await expect(widgets.getByRole('button', { name: 'Load Spotify player', exact: true })).toBeEnabled();
   await expect(widgets.locator('iframe, audio')).toHaveCount(0);
@@ -117,6 +135,10 @@ test('approved Ko-fi and Spotify destinations stay private until visitor interac
     return bounds.height >= 44 && bounds.left >= card.left - 1 && bounds.right <= card.right + 1;
   }))).toBe(true);
   const path = testInfo.outputPath(`newspaper-kofi-spotify-${testInfo.project.name}.png`);
+  for (const reveal of await page.locator('.newspaper-closing .newspaper-reveal').all()) {
+    await reveal.scrollIntoViewIfNeeded();
+    await expect.poll(() => reveal.evaluate(element => Number(getComputedStyle(element).opacity))).toBe(1);
+  }
   await page.locator('.newspaper-closing').screenshot({ path });
   await testInfo.attach(`DemiCorpse numbered support, Spotify and bottom colophon ${testInfo.project.name} (Spotify player not yet loaded)`, { path, contentType: 'image/png' });
   await colophon.getByRole('link', { name: 'Colophon ↗', exact: true }).click();
@@ -159,6 +181,12 @@ test('Morrow uses the original idle frames, pauses offscreen, and keeps keyboard
   await page.waitForTimeout(400);
   await expect(sprite).toHaveAttribute('data-frame', pausedFrame!);
   const hide = page.getByRole('button', { name: 'Hide cat', exact: true });
+  await expect(hide).toHaveCSS('border-top-width', '0px');
+  await expect(hide.locator('span')).toHaveCSS('font-size', '14px');
+  expect(await hide.evaluate(element => {
+    const bounds = element.getBoundingClientRect();
+    return bounds.width >= 44 && bounds.height >= 44;
+  })).toBe(true);
   await hide.scrollIntoViewIfNeeded();
   await hide.focus();
   await page.keyboard.press('Enter');

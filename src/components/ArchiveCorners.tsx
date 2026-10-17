@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { archiveLinks, parseSpotifyPlaylistUrl, parseSupportProfileUrl } from '@/lib/archive-links';
 import '@/archive-corners.css';
+import { FlowLink } from '@/components/ui/flow-button';
 
 export function ArchiveCorners() {
   const support = parseSupportProfileUrl(archiveLinks.supportUrl);
@@ -13,7 +14,7 @@ export function ArchiveCorners() {
   return <section className="archive-corners" aria-label="Support and listening">
     <article className="archive-corner" aria-labelledby="archive-support-title">
       <div className="archive-corner-heading">
-        <p className="archive-corner-label">04 / Support</p>
+        <p className="archive-corner-label">004 / Support</p>
         {!support && <span className="archive-corner-preview">Preview</span>}
       </div>
       <div className="archive-corner-body">
@@ -21,13 +22,12 @@ export function ArchiveCorners() {
         <div><h2 id="archive-support-title">Support the archive</h2>
           <p>A small kindness for this little corner of the internet.</p></div>
       </div>
-      {support ? <a className="archive-corner-action archive-support-action cms-button cms-primary" href={support} target="_blank" rel="noopener noreferrer">
-        Support on Ko-fi<span aria-hidden="true">↗</span><span className="archive-corner-sr-only"> (opens in a new tab)</span>
-      </a> : <button className="archive-corner-action archive-support-action cms-button cms-primary" type="button" disabled>Support link coming soon<span aria-hidden="true">↗</span></button>}
+      {support ? <FlowLink className="archive-corner-action archive-support-action" href={support} text="Support on Ko-fi" target="_blank" rel="noopener noreferrer" />
+        : <button className="archive-corner-action" type="button" disabled>Support link coming soon<span aria-hidden="true">↗</span></button>}
     </article>
     <article className="archive-corner" aria-labelledby="archive-listening-title">
       <div className="archive-corner-heading">
-        <p className="archive-corner-label">05 / Spotify</p>
+        <p className="archive-corner-label">005 / Spotify</p>
         {!playlist && <span className="archive-corner-preview">Preview</span>}
       </div>
       <div className="archive-corner-body">

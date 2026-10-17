@@ -147,18 +147,19 @@ async function expectReadingPaper(page: Page, collection: 'journal' | 'fragments
   await expect(page.getByRole('link', { name: `← ${collection}`, exact: true })).toHaveAttribute('href', `/${collection}/`);
   await expectNoOverflow(page);
 }
-async function expectLoadedMedia(images: Locator) {
-  const count = await images.count();
-  expect(count).toBeGreaterThan(0);
-  for (let index = 0; index < count; index++) {
+async function expectLoadedMedia(images: Locator, expectedCount = 2) {
+  // Media mounts a loading status until its Storage download resolves. Wait
+  // for every expected image, including after a repeated preview remount.
+  await expect(images).toHaveCount(expectedCount);
+  for (let index = 0; index < expectedCount; index++) {
     await images.nth(index).scrollIntoViewIfNeeded();
     await expect(images.nth(index)).toHaveAttribute('src', /^blob:/);
   }
-  await expect.poll(() => images.evaluateAll(nodes => nodes.every(node => {
+  await expect.poll(() => images.evaluateAll((nodes, count) => nodes.length === count && nodes.every(node => {
     const image = node as HTMLImageElement;
     const rect = image.getBoundingClientRect();
     return image.complete && image.naturalWidth > 0 && image.naturalHeight > 0 && rect.width > 0 && rect.height > 0;
-  })), { message: 'Fixture storage image bytes must really decode and render' }).toBe(true);
+  }), expectedCount), { message: 'Every fixture storage image must really decode and render' }).toBe(true);
   return images.evaluateAll(nodes => nodes.map(node => (node as HTMLImageElement).src));
 }
 async function expectRevoked(page: Page, urls: string[]) {
@@ -270,7 +271,7 @@ test('fragment image lightbox keeps paper styling, close, backdrop and reopen be
   await page.keyboard.press('Enter');
   const dialog = page.getByRole('dialog', { name: 'Fragment image', exact: true });
   await expect(dialog).toHaveClass(/newspaper-fragment-lightbox/);
-  await expectLoadedMedia(dialog.locator('img.cms-media'));
+  await expectLoadedMedia(dialog.locator('img.cms-media'), 1);
   await screenshot(page, testInfo, 'fragment-image-dialog');
   await dialog.getByRole('button', { name: 'Close image', exact: true }).click();
   await expect(dialog).toHaveCount(0);
@@ -428,7 +429,7 @@ test('owner dashboard, full editor, upload, private preview and public-session s
     await expect(page.locator('.cms-preview-label')).toHaveText('PRIVATE PREVIEW · includes unsaved changes');
     await expect(page.locator('.newspaper-reading-entry')).toContainText('Only this private preview includes this unsaved sentence.');
     await expect(page.locator('.newspaper-reading-entry > header h1')).toHaveText('An unsaved private fixture');
-    await expectLoadedMedia(page.locator('.newspaper-reading-entry img.cms-media'));
+    await expectLoadedMedia(page.locator('.newspaper-reading-entry img.cms-media'), 3);
     if (repeat === 0) await screenshot(page, testInfo, 'admin-private-preview');
     await page.getByRole('button', { name: 'Back to writing', exact: true }).click();
     await expect(page.getByLabel('Title', { exact: true })).toHaveValue('An unsaved private fixture');

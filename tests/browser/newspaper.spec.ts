@@ -152,16 +152,20 @@ test('newspaper columns and masthead fit narrow, tablet, and wide viewports', as
   for (const width of [320, 390, 768, 1024, 1440]) {
     await page.setViewportSize({ width, height: 900 });
     await expect(page.locator('.newspaper-masthead')).toBeVisible();
-    // A hidden horizontal overflow rule on body must not conceal a clipped
-    // wordmark. Its own text must fit its column as well as the viewport.
-    await expect.poll(() => page.locator('.newspaper-masthead h1').evaluate(heading => {
-      const bounds = heading.getBoundingClientRect();
+    // The original landing image must fit its own lockup, not merely a body
+    // whose overflow may be hidden. Check the rendered image bounds directly.
+    const mastheadLogo = page.locator('.newspaper-masthead h1 img');
+    await expect(mastheadLogo).toHaveAttribute('src', '/demicorpse-logo.png');
+    await expect.poll(() => mastheadLogo.evaluate(image => {
+      const bounds = image.getBoundingClientRect();
+      const lockup = image.closest('h1')!.getBoundingClientRect();
       return {
-        textFits: heading.scrollWidth <= heading.clientWidth + 1,
+        loaded: (image as HTMLImageElement).naturalWidth > 0,
+        fitsLockup: bounds.left >= lockup.left - 1 && bounds.right <= lockup.right + 1,
         withinViewport: bounds.left >= -1 && bounds.right <= innerWidth + 1,
       };
-    }), { message: `The complete masthead must fit at ${width}px` })
-      .toEqual({ textFits: true, withinViewport: true });
+    }), { message: `The original masthead logo must fit at ${width}px` })
+      .toEqual({ loaded: true, fitsLockup: true, withinViewport: true });
     await expectNoHorizontalOverflow(page);
   }
 });

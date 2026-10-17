@@ -2,3 +2,5 @@ import React from "react";import ReactDOM from "react-dom/client";import App fro
 import "./cms.css";
 
 import "./newspaper.css";
+
+import "./newspaper-sections.css";

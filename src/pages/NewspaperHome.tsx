@@ -1,5 +1,6 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, type CSSProperties } from 'react';
 import GradientMenu from '@/components/ui/gradient-menu';
+import { NewspaperMasthead } from '@/components/NewspaperMasthead';
 import { listEntries, publicCms, type Entry } from '@/lib/cms';
 import { SiteLink } from '@/lib/navigation';
 
@@ -62,11 +63,7 @@ export default function NewspaperHome() {
 
   const cover = photographs[0];
   return <main className="newspaper-page" id="newspaper" tabIndex={-1}>
-    <header className="newspaper-masthead">
-      <h1>DemiCorpse<span className="newspaper-ink-mark" aria-hidden="true" /></h1>
-      <div className="newspaper-edition"><span>The<br />night<br />archive</span><i aria-hidden="true" /></div>
-      <p className="newspaper-masthead-note">Writing<br />Photographs<br />Ordinary moments<br /><span>Worth keeping.</span></p>
-    </header>
+    <NewspaperMasthead home />
 
     <section className="newspaper-feature" aria-label="From the archive">
       <figure className="newspaper-cover">
@@ -107,7 +104,7 @@ export default function NewspaperHome() {
         </div>
         <div className="newspaper-contact-sheet">
           <header className="newspaper-section-head"><h2>Contact sheet</h2><SiteLink href="/gallery/">Gallery <span aria-hidden="true">↗</span></SiteLink></header>
-          {photographs.length ? <div className="newspaper-frames">{photographs.map((photo, index) => <SiteLink key={photo.id} href="/gallery/" className="newspaper-frame" aria-label={`View photograph: ${photo.caption || 'Untitled'}`}>
+          {photographs.length ? <div className="newspaper-frames" style={{'--frame-count': photographs.length} as CSSProperties}>{photographs.map((photo, index) => <SiteLink key={photo.id} href="/gallery/" className="newspaper-frame" aria-label={`View photograph: ${photo.caption || 'Untitled'}`}>
             <span className="newspaper-film-edge" aria-hidden="true" />
             <img src={photo.src} alt={photo.caption || 'From the DemiCorpse gallery'} loading="lazy" />
             <span className="newspaper-frame-number">{String(index + 1).padStart(2, '0')}<span aria-hidden="true">◇</span></span>

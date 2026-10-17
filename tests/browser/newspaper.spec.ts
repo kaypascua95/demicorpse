@@ -35,6 +35,10 @@ const photograph = {
   status: 'published',
 };
 
+const retiredCopy = /somewhere\s*between\s*alive\s*and\s*archived|the\s*night\s*archive/i;
+const calligraphyPhrase = 'words, words and everything in between';
+const dearMoonCopy = 'A collection of prose and poetry, coming soon.';
+
 type CmsState = 'content' | 'empty' | 'error';
 type CmsResponses = CmsState | { fragments: CmsState; gallery: CmsState };
 type MockPhotograph = Omit<typeof photograph, 'storage_path'> & { storage_path: string | null };
@@ -88,7 +92,32 @@ async function expectNewspaper(page: Page) {
   await expect(page.locator('.newspaper-masthead').getByRole('heading', { level: 1, name: 'DemiCorpse', exact: true })).toBeVisible();
   await expect(page.locator('.newspaper-page h1')).toHaveCount(1);
   await expect(page.locator('.main-header')).toHaveCount(1);
+  const home = page.getByRole('button', { name: 'DemiCorpse home', exact: true });
+  await expect(home.getByRole('img', { name: 'DemiCorpse moon', exact: true })).toBeVisible();
+  await expect(home.locator('.brand-moon image')).toHaveAttribute('href', '/demicorpse-logo.png');
+  await expect(page.locator('.newspaper-masthead h1 img')).toHaveAttribute('src', '/demicorpse-logo.png');
   await expect(page.locator('#persistent-video')).toHaveCount(1);
+}
+
+async function expectInkComplete(page: Page, timeout = 8_000) {
+  const ink = page.locator('.ink-calligraphy');
+  await expect(ink).toHaveCount(1);
+  await expect(ink.locator('.ink-calligraphy-readable')).toHaveText(calligraphyPhrase);
+  await expect(ink).toHaveAttribute('data-ink-started', 'true', { timeout });
+  await expect.poll(() => ink.locator('.ink-calligraphy-mask').evaluateAll(paths => paths.length > 0 && paths.every(path => {
+    const style = getComputedStyle(path);
+    return (style.strokeDasharray === 'none' || parseFloat(style.strokeDasharray) >= 0.999)
+      && Math.abs(parseFloat(style.strokeDashoffset) || 0) < 0.01;
+  })), { timeout, message: 'Every calligraphy stroke should be fully revealed' }).toBe(true);
+}
+
+async function expectTextRevealed(page: Page, selector: string, timeout = 5_000) {
+  await expect.poll(() => page.locator(selector).evaluateAll(elements => elements.length > 0 && elements.every(element => {
+    const style = getComputedStyle(element);
+    const blur = Number(style.filter.match(/blur\(([\d.]+)px\)/)?.[1] || 0);
+    const translation = style.transform === 'none' ? 0 : new DOMMatrix(style.transform).m42;
+    return Number(style.opacity) >= 0.99 && blur <= 0.1 && Math.abs(translation) <= 0.5;
+  })), { timeout, message: 'Text should be readable without transparent, blurred, or translated reveal states' }).toBe(true);
 }
 
 async function expectNoHorizontalOverflow(page: Page) {
@@ -99,13 +128,15 @@ async function expectNoHorizontalOverflow(page: Page) {
     .toEqual({ documentFits: true, bodyFits: true });
 }
 
-test('the unchanged entrance gates the newspaper and repeated Enter is safe', async ({ page }) => {
+test('the original full-logo entrance gates the newspaper and repeated Enter is safe', async ({ page }) => {
   await mockCms(page);
   await page.goto('/');
   const entrance = page.locator('.entrance-hero');
   await expect(entrance).toBeVisible();
   await expect(entrance.locator('.landing-logo')).toHaveAttribute('src', '/demicorpse-logo.png');
-  await expect(entrance).toContainText('SOMEWHERE BETWEEN ALIVE AND ARCHIVED.');
+  await expect(entrance.locator('.landing-logo')).toHaveAttribute('alt', 'DemiCorpse');
+  await expect(entrance.locator('.brand-moon')).toHaveCount(0);
+  await expect(entrance).not.toContainText(retiredCopy);
   await expect(page.locator('.newspaper-page')).toHaveCount(0);
   await expect(page.locator('.main-header')).toHaveCount(0);
   const film = await page.locator('#persistent-video').evaluateHandle(element => element);
@@ -140,12 +171,61 @@ test('the direct home route presents real published fragments and photographs', 
   expect(galleryRequest?.searchParams.get('status')).toBe('eq.published');
   await expectNoHorizontalOverflow(page);
 
+  // Trigger the real once-only reveals before capturing the entire page;
+  // a full-page screenshot alone does not bring offscreen text into view.
+  for (const reveal of await page.locator('.newspaper-reveal').all()) {
+    await reveal.scrollIntoViewIfNeeded();
+    await expect.poll(() => reveal.evaluate(element => Number(getComputedStyle(element).opacity)))
+      .toBeGreaterThan(0);
+  }
+  await expectTextRevealed(page, '.newspaper-reveal');
+  await page.locator('.ink-calligraphy').scrollIntoViewIfNeeded();
+  await expectInkComplete(page);
+  await page.mouse.move(0, 0);
+  await page.evaluate(() => {
+    if (document.activeElement instanceof HTMLElement) document.activeElement.blur();
+    window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
+  });
+  await expect.poll(() => page.evaluate(() => window.scrollY)).toBe(0);
   const screenshotPath = testInfo.outputPath(`newspaper-fixture-${testInfo.project.name}.png`);
-  await page.screenshot({ path: screenshotPath, fullPage: true, animations: 'disabled' });
+  await page.screenshot({ path: screenshotPath, fullPage: true });
   await testInfo.attach(`Newspaper ${testInfo.project.name} (mock CMS fixtures, not live content)`, {
     path: screenshotPath,
     contentType: 'image/png',
   });
+});
+
+test('revised Dear Moon copy and red-ink calligraphy remain correct across home navigation', async ({ page }) => {
+  await mockCms(page);
+  await page.goto('/?enter=1');
+  await expectNewspaper(page);
+  const moon = page.locator('.newspaper-moon');
+  await expect(moon.locator('.newspaper-label')).toHaveText('001 / Coming Soon');
+  await expect(moon.locator('.newspaper-moon-note')).toHaveText(dearMoonCopy);
+  await expect(moon).not.toContainText(/a quieter room/i);
+  await expect(page.locator('body')).not.toContainText(retiredCopy);
+  await page.getByRole('button', { name: 'Open menu', exact: true }).click();
+  await expect(page.locator('.more-dropdown')).toBeVisible();
+  await expect(page.locator('body')).not.toContainText(retiredCopy);
+  await page.keyboard.press('Escape');
+
+  const ink = page.locator('.ink-calligraphy');
+  await ink.scrollIntoViewIfNeeded();
+  await expectInkComplete(page);
+  expect(await ink.evaluate(element => {
+    const [red, green, blue] = (getComputedStyle(element).color.match(/[\d.]+/g) || []).map(Number);
+    return red > green * 1.5 && red > blue * 1.5;
+  }), 'Calligraphy should use red ink').toBe(true);
+
+  await page.locator('.newspaper-text-link[href="/dear-moon/"]').click();
+  await expect(page).toHaveURL(/\/dear-moon\/$/);
+  await expect(page.locator('.coming-inner > p')).toHaveText(dearMoonCopy);
+  await expect(page.locator('body')).not.toContainText(retiredCopy);
+  await page.getByRole('button', { name: 'DemiCorpse home', exact: true }).click();
+  await expectNewspaper(page);
+  // A route remount must show the completed inscription immediately rather
+  // than beginning its multi-second write-on sequence for a second time.
+  await expectInkComplete(page, 1_000);
 });
 
 test('newspaper columns and masthead fit narrow, tablet, and wide viewports', async ({ page }) => {
@@ -350,6 +430,9 @@ test('reduced-motion visitors can enter and use navigation with the keyboard', a
   await page.keyboard.press('Enter');
   await expectNewspaper(page);
   expect(await page.evaluate(() => matchMedia('(prefers-reduced-motion: reduce)').matches)).toBe(true);
+  await expectInkComplete(page, 1_000);
+  await expectTextRevealed(page, '.newspaper-reveal', 1_000);
+  await expect(page.locator('body')).not.toContainText(retiredCopy);
 
   const trigger = page.getByRole('button', { name: 'Open menu', exact: true });
   await trigger.focus();
@@ -369,4 +452,9 @@ test('reduced-motion visitors can enter and use navigation with the keyboard', a
   await page.keyboard.press('Enter');
   await expectNewspaper(page);
   await expectNoHorizontalOverflow(page);
+
+  await page.locator('.newspaper-text-link[href="/dear-moon/"]').click();
+  await expect(page.locator('.coming-inner > p')).toHaveText(dearMoonCopy);
+  await expectTextRevealed(page, '.coming-inner > span, .coming-inner h1, .coming-inner > p, .coming-page footer', 1_000);
+  await expect(page.locator('body')).not.toContainText(retiredCopy);
 });

@@ -2,7 +2,9 @@ import {test,expect} from '@playwright/test';
 
 test('public navigation and responsive pages render',async({page})=>{
  await page.goto('/journal/');
- await expect(page.locator('.main-logo img')).toHaveAttribute('src','/demicorpse-logo.png');
+ await expect(page.getByRole('button',{name:'DemiCorpse home',exact:true})).toBeVisible();
+ await expect(page.locator('.main-logo .brand-moon image')).toHaveAttribute('href','/demicorpse-logo.png');
+ await expect(page.locator('.newspaper-masthead img')).toHaveAttribute('src','/demicorpse-logo.png');
  await page.getByRole('button',{name:'FRAGMENTS',exact:true}).click();
  await expect(page).toHaveURL(/\/fragments\//);
  await expect(page.locator('.main-header')).toBeVisible();

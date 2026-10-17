@@ -59,11 +59,14 @@ async function mockSectionContent(page: Page) {
     route.fulfill({ status: 200, contentType: 'text/html', body: '<!doctype html><html><body>Fixture player. No external media loaded.</body></html>' }));
 }
 
-async function expectOriginalLogo(page: Page) {
-  const headerLogo = page.locator('.main-logo img');
-  await expect(headerLogo).toBeVisible();
-  await expect(headerLogo).toHaveAttribute('src', '/demicorpse-logo.png');
-  await expect(headerLogo).toHaveAttribute('alt', 'DemiCorpse');
+async function expectBrandMoon(page: Page) {
+  const home = page.getByRole('button', { name: 'DemiCorpse home', exact: true });
+  const moon = home.getByRole('img', { name: 'DemiCorpse moon', exact: true });
+  await expect(home).toBeVisible();
+  await expect(moon).toBeVisible();
+  await expect(moon.locator('image')).toHaveAttribute('href', '/demicorpse-logo.png');
+  await expect(moon.locator('image')).toHaveAttribute('clip-path', /^url\(#.+\)$/);
+  await expect(home.locator('img')).toHaveCount(0);
 }
 
 async function expectSectionLayout(page: Page) {
@@ -74,7 +77,7 @@ async function expectSectionLayout(page: Page) {
   await expect(mastheadLogo).toBeVisible();
   await expect(mastheadLogo).toHaveAttribute('src', '/demicorpse-logo.png');
   await expect(page.locator('.newspaper-masthead a')).toHaveAttribute('href', '/?enter=1');
-  await expectOriginalLogo(page);
+  await expectBrandMoon(page);
   await expect.poll(() => mastheadLogo.evaluate(image => {
     const bounds = image.getBoundingClientRect();
     const lockup = image.parentElement!.getBoundingClientRect();
@@ -150,12 +153,13 @@ async function attachFixtureScreenshot(page: Page, testInfo: TestInfo, section: 
 
 test.beforeEach(async ({ page }) => { await mockSectionContent(page); });
 
-test('every main landing section shares the newspaper and original landing logo', async ({ page }) => {
+test('every main landing section shares the newspaper, full masthead, and branded moon home button', async ({ page }) => {
   for (const section of ['journal', 'fragments', 'gallery', 'play', 'dear-moon', 'likas', 'archive', 'colophon']) {
     await page.goto(`/${section}/`);
     await expectSectionLayout(page);
     await expect(page.locator('.newspaper-section-paper h1')).toHaveCount(1);
     await expect(page.locator('.entrance-hero')).toHaveCount(0);
+    await expect(page.locator('body')).not.toContainText(/somewhere\s*between\s*alive\s*and\s*archived|the\s*night\s*archive/i);
   }
 });
 
@@ -274,7 +278,7 @@ test('LIKAS retains its external project button and section masthead returns hom
   await expect(page).toHaveURL(/\/\?enter=1$/);
   await expect(page.locator('main.newspaper-page')).toBeVisible();
   await expect(page.locator('.newspaper-masthead h1 img')).toHaveAttribute('src', '/demicorpse-logo.png');
-  await expectOriginalLogo(page);
+  await expectBrandMoon(page);
 });
 
 test('detail and admin routes keep their existing surfaces outside the landing wrapper', async ({ page }) => {
@@ -282,11 +286,11 @@ test('detail and admin routes keep their existing surfaces outside the landing w
   await expect(page.locator('.cms-entry')).toContainText(journal[0].content);
   await expect(page.locator('.newspaper-section-shell')).toHaveCount(0);
   await expect(page.locator('.newspaper-masthead')).toHaveCount(0);
-  await expectOriginalLogo(page);
+  await expectBrandMoon(page);
   await page.goto('/admin');
   await expect(page.getByLabel('Email', { exact: true })).toBeVisible();
   await expect(page.getByLabel('Password', { exact: true })).toBeVisible();
   await expect(page.locator('.newspaper-section-shell')).toHaveCount(0);
   await expect(page.locator('.newspaper-masthead')).toHaveCount(0);
-  await expectOriginalLogo(page);
+  await expectBrandMoon(page);
 });

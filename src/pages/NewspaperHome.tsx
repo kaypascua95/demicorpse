@@ -1,3 +1,5 @@
+import { EditorialReveal } from '@/components/EditorialReveal';
+import { InkCalligraphy } from '@/components/InkCalligraphy';
 import { useEffect, useState, type CSSProperties } from 'react';
 import GradientMenu from '@/components/ui/gradient-menu';
 import { NewspaperMasthead } from '@/components/NewspaperMasthead';
@@ -68,6 +70,7 @@ export default function NewspaperHome() {
   const cover = photographs[0];
   return <main className="newspaper-page" id="newspaper" tabIndex={-1}>
     <NewspaperMasthead home />
+    <div className="newspaper-inscription"><InkCalligraphy /></div>
 
     <section className="newspaper-feature" aria-label="From the archive">
       <figure className="newspaper-cover">
@@ -75,16 +78,16 @@ export default function NewspaperHome() {
           <img src={cover?.src || '/hero-still.png'} alt={cover?.caption || 'Moonlight over the water in the DemiCorpse entrance film'} fetchPriority="high" />
           <span className="newspaper-photo-open">View gallery <span aria-hidden="true">↗</span></span>
         </SiteLink>
-        <figcaption><span>{cover?.caption || 'Words, worlds, and everything in between.'}</span>
+        <figcaption><span>{cover?.caption || 'DemiCorpse / Photographs'}</span>
           <span>{cover ? [cover.location, formatDate(cover.date)].filter(Boolean).join(' / ') : 'DemiCorpse / The moving archive'}</span>
         </figcaption>
       </figure>
       <aside className="newspaper-moon">
-        <p className="newspaper-label">001 / A quieter room</p>
-        <h2><SiteLink href="/dear-moon/">Dear<br />Moon</SiteLink></h2>
+        <EditorialReveal as="p" className="newspaper-label">001 / Coming Soon</EditorialReveal>
+        <EditorialReveal as="h2" delay={0.15}><SiteLink href="/dear-moon/">Dear<br />Moon</SiteLink></EditorialReveal>
         <span className="newspaper-short-rule" aria-hidden="true" />
-        <p className="newspaper-moon-note">Somewhere between<br />alive and archived.</p>
-        <div className="newspaper-moon-bottom"><p>A quieter room<br />is being prepared.</p>
+        <EditorialReveal as="p" className="newspaper-moon-note" delay={0.3}>A collection of prose and poetry, coming soon.</EditorialReveal>
+        <div className="newspaper-moon-bottom">
           <SiteLink className="newspaper-text-link" href="/dear-moon/">Visit Dear Moon <span aria-hidden="true">↗</span></SiteLink>
         </div>
       </aside>
@@ -93,7 +96,7 @@ export default function NewspaperHome() {
     <div className="newspaper-paper">
       <section className="newspaper-latest" aria-label="Recent additions">
         <div className="newspaper-fragments">
-          <header className="newspaper-section-head"><h2>Recent fragments</h2><SiteLink href="/fragments/" aria-label="All fragments">Index <span aria-hidden="true">↗</span></SiteLink></header>
+          <header className="newspaper-section-head"><EditorialReveal as="h2">Recent fragments</EditorialReveal><SiteLink href="/fragments/" aria-label="All fragments">Index <span aria-hidden="true">↗</span></SiteLink></header>
           {fragmentState === 'loading' ? <p className="newspaper-status" role="status">Gathering the latest fragments…</p>
             : fragmentState === 'error' ? <div className="newspaper-status" role="status"><p>The fragments couldn’t be loaded.</p><button onClick={() => setAttempt(value => value + 1)}>Try again ↗</button></div>
             : fragments.length ? <ol className="newspaper-fragment-list">{fragments.map((entry, index) => {
@@ -107,7 +110,7 @@ export default function NewspaperHome() {
             })}</ol> : <p className="newspaper-status">No fragments yet. Small things are being gathered.</p>}
         </div>
         <div className="newspaper-contact-sheet">
-          <header className="newspaper-section-head"><h2>Contact sheet</h2><SiteLink href="/gallery/">Gallery <span aria-hidden="true">↗</span></SiteLink></header>
+          <header className="newspaper-section-head"><EditorialReveal as="h2">Contact sheet</EditorialReveal><SiteLink href="/gallery/">Gallery <span aria-hidden="true">↗</span></SiteLink></header>
           {photographs.length ? <div className="newspaper-frames" style={{'--frame-count': photographs.length} as CSSProperties}>{photographs.map((photo, index) => <SiteLink key={photo.id} href="/gallery/" className="newspaper-frame" aria-label={`View photograph: ${photo.caption || 'Untitled'}`}>
             <span className="newspaper-film-edge" aria-hidden="true" />
             <img src={photo.src} alt={photo.caption || 'From the DemiCorpse gallery'} loading="lazy" />
@@ -118,9 +121,9 @@ export default function NewspaperHome() {
       </section>
 
       <section className="newspaper-about" id="about">
-        <div><p className="newspaper-label">002 / About</p><h2>Welcome to my<br />little corner of<br /><em>the internet.</em></h2></div>
+        <div><p className="newspaper-label">002 / About</p><EditorialReveal as="h2">Welcome to my<br />little corner of<br /><em>the internet.</em></EditorialReveal></div>
         <div className="newspaper-about-copy">
-          <p className="newspaper-about-lead">I’m Kayla, though around here,<br />I go by DemiCorpse.</p>
+          <EditorialReveal as="p" className="newspaper-about-lead">I’m Kayla, though around here,<br />I go by DemiCorpse.</EditorialReveal>
           <div className="newspaper-about-columns">
             <p>I’m an engineer by profession, which means I spend a perfectly reasonable portion of my life solving problems. Unfortunately, this has done very little to stop me from creating new ones in the form of unfinished poems, half-formed ideas, excessive screenshots, late-night gaming sessions, and an alarming number of thoughts saved to my Notes app.</p>
             <p>This is where some of those things eventually end up.</p>
@@ -131,9 +134,9 @@ export default function NewspaperHome() {
         </div>
       </section>
       <footer className="newspaper-footer" id="elsewhere">
-        <div><p className="newspaper-label">003 / Elsewhere</p><h2>Leave your mark.<br /><em>Find me elsewhere.</em></h2><p>Follow along through the other corners of the internet where DemiCorpse still wanders.</p></div>
+        <div><p className="newspaper-label">003 / Elsewhere</p><EditorialReveal as="h2">Leave your mark.<br /><em>Find me elsewhere.</em></EditorialReveal><p>Follow along through the other corners of the internet where DemiCorpse still wanders.</p></div>
         <GradientMenu />
-        <div className="newspaper-colophon"><span>DemiCorpse</span><span>Somewhere between alive and archived.</span><SiteLink href="/colophon/">Colophon ↗</SiteLink></div>
+        <div className="newspaper-colophon"><span>DemiCorpse</span><SiteLink href="/colophon/">Colophon ↗</SiteLink></div>
       </footer>
     </div>
   </main>;

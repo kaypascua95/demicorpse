@@ -40,7 +40,8 @@ type CmsState = 'content' | 'empty' | 'error';
 /** Keep every content assertion independent of the deployed CMS and its data. */
 async function mockCms(page: Page, state: CmsState = 'content') {
   const requests: URL[] = [];
-  await page.route('**/rest/v1/**', async route => {
+  // Only mock the public tables used here, not auth or other Supabase traffic.
+  await page.route(url => /\/rest\/v1\/(?:cms_entries|gallery_items|cms_traces)$/.test(url.pathname), async route => {
     const request = route.request();
     const url = new URL(request.url());
     const headers = {
@@ -72,7 +73,10 @@ async function mockCms(page: Page, state: CmsState = 'content') {
     const single = request.headers().accept?.includes('application/vnd.pgrst.object+json');
     await route.fulfill({ status: 200, headers, json: single ? data[0] ?? null : data });
   });
-  return requests;
+  return {
+    requests,
+    setState(nextState: CmsState) { state = nextState; },
+  };
 }
 
 async function expectNewspaper(page: Page) {
@@ -113,8 +117,8 @@ test('the unchanged entrance gates the newspaper and repeated Enter is safe', as
   await film.dispose();
 });
 
-test('the direct home route presents real published fragments and photographs', async ({ page }) => {
-  const requests = await mockCms(page);
+test('the direct home route presents real published fragments and photographs', async ({ page }, testInfo) => {
+  const { requests } = await mockCms(page);
   await page.goto('/?enter=1');
   await expectNewspaper(page);
   await expect(page.locator('.entrance-hero')).toHaveCount(0);
@@ -131,6 +135,13 @@ test('the direct home route presents real published fragments and photographs', 
   expect(fragmentRequest?.searchParams.get('status')).toBe('eq.published');
   expect(galleryRequest?.searchParams.get('status')).toBe('eq.published');
   await expectNoHorizontalOverflow(page);
+
+  const screenshotPath = testInfo.outputPath(`newspaper-fixture-${testInfo.project.name}.png`);
+  await page.screenshot({ path: screenshotPath, fullPage: true, animations: 'disabled' });
+  await testInfo.attach(`Newspaper ${testInfo.project.name} (mock CMS fixtures, not live content)`, {
+    path: screenshotPath,
+    contentType: 'image/png',
+  });
 });
 
 test('newspaper columns and masthead fit narrow, tablet, and wide viewports', async ({ page }) => {
@@ -141,6 +152,16 @@ test('newspaper columns and masthead fit narrow, tablet, and wide viewports', as
   for (const width of [320, 390, 768, 1024, 1440]) {
     await page.setViewportSize({ width, height: 900 });
     await expect(page.locator('.newspaper-masthead')).toBeVisible();
+    // A hidden horizontal overflow rule on body must not conceal a clipped
+    // wordmark. Its own text must fit its column as well as the viewport.
+    await expect.poll(() => page.locator('.newspaper-masthead h1').evaluate(heading => {
+      const bounds = heading.getBoundingClientRect();
+      return {
+        textFits: heading.scrollWidth <= heading.clientWidth + 1,
+        withinViewport: bounds.left >= -1 && bounds.right <= innerWidth + 1,
+      };
+    }), { message: `The complete masthead must fit at ${width}px` })
+      .toEqual({ textFits: true, withinViewport: true });
     await expectNoHorizontalOverflow(page);
   }
 });
@@ -206,7 +227,9 @@ test('secondary menu closes with Escape, outside click, and repeated toggles', a
 
   await page.getByRole('button', { name: 'Open menu', exact: true }).click();
   await expect(menu).toBeVisible();
-  await page.locator('.newspaper-masthead h1').click();
+  // The existing mobile menu overlays the masthead. Blank header space above
+  // the menu is a real outside target at every viewport and does not navigate.
+  await page.locator('.main-header').click({ position: { x: 5, y: 5 } });
   await expect(menu).toHaveCount(0);
   await page.getByRole('button', { name: 'Open menu', exact: true }).click();
   await page.getByRole('button', { name: 'Close menu', exact: true }).click();
@@ -217,7 +240,7 @@ test('secondary menu closes with Escape, outside click, and repeated toggles', a
 
 for (const state of ['empty', 'error'] as const) {
   test(`${state} CMS responses do not invent fragments or photographs`, async ({ page }) => {
-    await mockCms(page, state);
+    const cms = await mockCms(page, state);
     await page.goto('/?enter=1');
     await expectNewspaper(page);
     const fragments = page.locator('.newspaper-fragments');
@@ -225,13 +248,39 @@ for (const state of ['empty', 'error'] as const) {
     const message = state === 'empty'
       ? /no fragments|nothing|waiting|yet|appear|gather|soon/i
       : /unavailable|couldn.t|unable|could not|try again|not.*load/i;
-    await expect(fragments).toContainText(message);
-    await expect(photos).toContainText(message);
+    // Supabase retries 503 three times with 1s + 2s + 4s backoff. Preserve
+    // that real retry behavior and wait for its bounded terminal error state.
+    const stateTimeout = state === 'error' ? 15_000 : 5_000;
+    await expect(fragments).toContainText(message, { timeout: stateTimeout });
+    await expect(photos).toContainText(message, { timeout: stateTimeout });
     await expect(fragments.locator('a[href^="/fragments/"]:not([href="/fragments/"])')).toHaveCount(0);
     await expect(photos.locator('img')).toHaveCount(0);
+    await expect(fragments).not.toContainText(fragment.title);
+    await expect(fragments).not.toContainText(fragment.excerpt);
     await expect(fragments).not.toContainText(fragment.content);
     await expect(photos).not.toContainText(photograph.caption);
     await expectNoHorizontalOverflow(page);
+
+    if (state === 'error') {
+      const failedFragmentRequests = cms.requests.filter(url =>
+        url.pathname.endsWith('/cms_entries') && url.searchParams.get('collection') === 'eq.fragments');
+      expect(failedFragmentRequests.length, '503 must exhaust the initial request plus three retries')
+        .toBeGreaterThanOrEqual(4);
+
+      // The public Retry control must fetch current CMS data rather than
+      // leaving an error, showing a fabricated fallback, or requiring reload.
+      cms.setState('content');
+      await fragments.getByRole('button', { name: /Try again/i }).click();
+      await expect(fragments).toContainText(fragment.title);
+      await expect(fragments).toContainText(fragment.excerpt);
+      await expect(fragments.locator(`a[href="/fragments/${fragment.slug}"]`)).toHaveCount(1);
+      await expect(fragments.getByRole('button', { name: /Try again/i })).toHaveCount(0);
+      await expect(photos.locator('img')).toHaveAttribute('src', photograph.image_url);
+      await expect(photos.getByRole('button', { name: /Try again/i })).toHaveCount(0);
+      await expect(fragments).not.toContainText('couldn’t be loaded');
+      await expect(photos).not.toContainText('couldn’t be loaded');
+      await expectNoHorizontalOverflow(page);
+    }
   });
 }
 

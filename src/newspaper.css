@@ -18,8 +18,9 @@
 .newspaper-header :is(a, button):focus-visible { outline: 2px solid #b9604d; outline-offset: 5px; }
 .newspaper-page:focus { outline: none; }
 .global-header.newspaper-header {
-  position: relative !important;
+  position: sticky !important;
   inset: auto;
+  top: 0;
   width: min(1440px, 94vw);
   margin: 0 auto;
   height: 76px;

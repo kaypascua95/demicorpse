@@ -36,9 +36,11 @@ const photograph = {
 };
 
 type CmsState = 'content' | 'empty' | 'error';
+type CmsResponses = CmsState | { fragments: CmsState; gallery: CmsState };
+type MockPhotograph = Omit<typeof photograph, 'storage_path'> & { storage_path: string | null };
 
 /** Keep every content assertion independent of the deployed CMS and its data. */
-async function mockCms(page: Page, state: CmsState = 'content') {
+async function mockCms(page: Page, state: CmsResponses = 'content', photos: MockPhotograph[] = [photograph]) {
   const requests: URL[] = [];
   // Only mock the public tables used here, not auth or other Supabase traffic.
   await page.route(url => /\/rest\/v1\/(?:cms_entries|gallery_items|cms_traces)$/.test(url.pathname), async route => {
@@ -53,7 +55,9 @@ async function mockCms(page: Page, state: CmsState = 'content') {
       return;
     }
     requests.push(url);
-    if (state === 'error') {
+    const responseState = typeof state === 'string' ? state
+      : url.pathname.endsWith('/gallery_items') ? state.gallery : state.fragments;
+    if (responseState === 'error') {
       await route.fulfill({
         status: 503,
         headers,
@@ -62,20 +66,20 @@ async function mockCms(page: Page, state: CmsState = 'content') {
       return;
     }
 
-    let data: Array<typeof fragment | typeof photograph> = [];
-    if (state === 'content') {
+    let data: Array<typeof fragment | MockPhotograph> = [];
+    if (responseState === 'content') {
       if (url.pathname.endsWith('/cms_entries') && url.searchParams.get('collection') === 'eq.fragments') {
         const slug = url.searchParams.get('slug');
         data = !slug || slug === `eq.${fragment.slug}` ? [fragment] : [];
       }
-      if (url.pathname.endsWith('/gallery_items')) data = [photograph];
+      if (url.pathname.endsWith('/gallery_items')) data = photos;
     }
     const single = request.headers().accept?.includes('application/vnd.pgrst.object+json');
     await route.fulfill({ status: 200, headers, json: single ? data[0] ?? null : data });
   });
   return {
     requests,
-    setState(nextState: CmsState) { state = nextState; },
+    setState(nextState: CmsResponses) { state = nextState; },
   };
 }
 
@@ -287,6 +291,53 @@ for (const state of ['empty', 'error'] as const) {
     }
   });
 }
+
+test('a mixed-result retry removes stale Storage photographs and restores the existing cover still', async ({ page }) => {
+  const storedPhoto = { ...photograph, image_url: '', storage_path: 'fixture/newspaper-window.png' };
+  const cms = await mockCms(page, { fragments: 'error', gallery: 'content' }, [storedPhoto]);
+  await page.route(url => url.pathname === '/storage/v1/object/cms-media/fixture/newspaper-window.png', async route => {
+    const headers = { 'access-control-allow-origin': '*', 'access-control-allow-headers': '*' };
+    if (route.request().method() === 'OPTIONS') {
+      await route.fulfill({ status: 204, headers });
+      return;
+    }
+    await route.fulfill({ status: 200, headers, contentType: 'image/png', path: 'public/hero-still.png' });
+  });
+  await page.goto('/?enter=1');
+  await expectNewspaper(page);
+  const fragments = page.locator('.newspaper-fragments');
+  const photos = page.locator('.newspaper-contact-sheet');
+  const cover = page.locator('.newspaper-cover-link img');
+  await expect(photos.locator('img')).toHaveAttribute('src', /^blob:/);
+  const oldBlob = (await photos.locator('img').getAttribute('src'))!;
+  await expect(cover).toHaveAttribute('src', oldBlob);
+  await expect.poll(() => cover.evaluate(image => (image as HTMLImageElement).naturalWidth)).toBeGreaterThan(0);
+  await expect(fragments).toContainText('couldn’t be loaded', { timeout: 15_000 });
+  expect(cms.requests.filter(url => url.pathname.endsWith('/cms_entries')).length).toBeGreaterThanOrEqual(4);
+  await expect(fragments.locator('.newspaper-fragment-list')).toHaveCount(0);
+
+  const priorGalleryRequests = cms.requests.filter(url => url.pathname.endsWith('/gallery_items')).length;
+  cms.setState({ fragments: 'content', gallery: 'error' });
+  await fragments.getByRole('button', { name: /Try again/i }).click();
+  await expect(fragments).toContainText(fragment.excerpt);
+  await expect(fragments.locator(`a[href="/fragments/${fragment.slug}"]`)).toHaveCount(1);
+  // This must clear the previous successful gallery immediately, including
+  // the cover image that shares its object URL, not just replace error copy.
+  await expect(photos.locator('img')).toHaveCount(0);
+  await expect(cover).toHaveAttribute('src', '/hero-still.png');
+  await expect(page.locator('.newspaper-cover figcaption')).not.toContainText(photograph.caption);
+  await expect(photos).toContainText('couldn’t be loaded', { timeout: 15_000 });
+  expect(cms.requests.filter(url => url.pathname.endsWith('/gallery_items')).length - priorGalleryRequests)
+    .toBeGreaterThanOrEqual(4);
+  expect(await page.locator('img').evaluateAll((images, url) => images.some(image => image.getAttribute('src') === url), oldBlob))
+    .toBe(false);
+  // Revocation is observable without exposing or loading any external data.
+  expect(await page.evaluate(async url => {
+    try { return (await fetch(url)).ok; } catch { return false; }
+  }, oldBlob)).toBe(false);
+  await expect.poll(() => cover.evaluate(image => (image as HTMLImageElement).naturalWidth)).toBeGreaterThan(0);
+  await expectNewspaper(page);
+});
 
 test('reduced-motion visitors can enter and use navigation with the keyboard', async ({ page }) => {
   await mockCms(page);

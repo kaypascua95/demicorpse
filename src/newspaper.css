@@ -1,5 +1,5 @@
-/* Mockup edition. Every override is scoped to the entered home page.
-   The entrance, persistent film, other rooms and CMS retain their own styles. */
+/* Mockup edition. Overrides are scoped to entered landing-page wrappers.
+   The entrance, persistent film, detail pages and CMS retain their own styles. */
 .newspaper-page {
   --paper: #eae3d5;
   --ink: #171814;
@@ -32,10 +32,8 @@
   backdrop-filter: blur(8px);
 }
 .newspaper-header .main-logo { padding: 0; flex-shrink: 0; }
-.newspaper-header .main-logo > img { position: absolute; width: 1px !important; height: 1px; overflow: hidden; clip-path: inset(50%); }
 .newspaper-identity { display: flex; align-items: center; gap: 22px; color: #eae3d5; text-align: left; }
 .newspaper-identity > span:last-child { border-left: 1px solid #999284; padding: 11px 0 11px 18px; font: 9px/1.7 'DM Mono', monospace; text-transform: uppercase; letter-spacing: .21em; }
-.newspaper-crescent { display: block; width: 31px; height: 39px; border-radius: 50%; box-shadow: inset 9px -2px 0 0 #eae3d5; transform: rotate(15deg); margin-left: 12px; }
 .newspaper-header .primary-nav { margin-left: auto !important; margin-right: 0 !important; gap: 26px !important; }
 .newspaper-header .primary-nav button { font: italic 16px/1.2 'Cormorant Garamond', Georgia, serif; letter-spacing: .03em; color: #eae3d5; }
 .newspaper-header .header-actions { margin-left: 10px; }
@@ -48,8 +46,6 @@
 .newspaper-skip { position: absolute; top: 8px; left: 8px; padding: 12px; transform: translateY(-200%); background: #eae3d5; color: #171814; z-index: 10001; }
 .newspaper-skip:focus { transform: none; }
 .newspaper-masthead { display: grid; grid-template-columns: minmax(0, 1fr) 120px 160px; gap: 28px; align-items: end; padding: 20px 0 15px; background: rgba(9, 10, 9, .5); }
-.newspaper-masthead h1 { position: relative; z-index: 2; margin: 0; font: 400 clamp(96px, 14.9vw, 230px)/.79 var(--editorial); letter-spacing: -.072em; white-space: nowrap; }
-.newspaper-ink-mark { position: absolute; left: 3.7%; top: 10px; bottom: -70px; width: 5px; background: linear-gradient(90deg, #772a25, #511d1a 75%, transparent); opacity: .8; z-index: -1; transform: rotate(1deg); pointer-events: none; }
 .newspaper-edition { padding: 0 0 2px; font: 12px/1.6 'DM Mono', monospace; letter-spacing: .2em; text-transform: uppercase; }
 .newspaper-edition i { display: block; width: 70px; height: 2px; margin-top: 15px; background: #722b2a; }
 .newspaper-masthead-note { margin: 0; padding-bottom: 2px; font: 8px/1.9 'DM Mono', monospace; text-transform: uppercase; letter-spacing: .2em; }
@@ -120,7 +116,6 @@
   .global-header.newspaper-header > .portrait-primary-nav button { display: block !important; font: italic 16px/1.2 'Cormorant Garamond', Georgia, serif !important; padding: 12px 0 0 !important; letter-spacing: .03em !important; }
   .newspaper-header .header-actions { grid-column: 2; grid-row: 1; }
   .newspaper-masthead { grid-template-columns: minmax(0, 1fr) 90px; gap: 20px; padding-top: 24px; }
-  .newspaper-masthead h1 { font-size: 17vw; }
   .newspaper-masthead-note { display: none; }
   .newspaper-edition { font-size: 10px; }
   .newspaper-feature { grid-template-columns: minmax(0, 1fr) 240px; }
@@ -138,16 +133,13 @@
   .newspaper-page, .global-header.newspaper-header { width: calc(100% - 28px); }
   .newspaper-identity { gap: 15px; }
   .newspaper-identity > span:last-child { font-size: 7px; letter-spacing: .15em; padding-left: 14px; }
-  .newspaper-crescent { margin-left: 5px; width: 25px; height: 33px; box-shadow: inset 7px -2px 0 0 #eae3d5; }
   .global-header.newspaper-header > .portrait-primary-nav { display: grid !important; grid-template-columns: repeat(3, 1fr); gap: 0 15px !important; padding-bottom: 12px !important; overflow: visible !important; }
   .global-header.newspaper-header > .portrait-primary-nav button { font-size: 16px !important; min-height: 40px; padding: 10px 0 !important; }
   .newspaper-masthead { grid-template-columns: 1fr; gap: 15px; padding: 24px 0 12px; }
-  .newspaper-masthead h1 { font-size: 21.2vw; line-height: .85; }
   .newspaper-edition { display: flex; justify-content: space-between; align-items: center; font-size: 8px; letter-spacing: .18em; padding: 0 2px; }
   .newspaper-edition span br { display: none; }
   .newspaper-edition span { word-spacing: 6px; }
   .newspaper-edition i { width: 58px; margin: 0; }
-  .newspaper-ink-mark { top: 4px; bottom: -40px; width: 3px; }
   .newspaper-feature { grid-template-columns: 1fr; }
   .newspaper-cover-link { min-height: 320px; aspect-ratio: 1.12; }
   .newspaper-cover figcaption { padding: 13px 16px; gap: 8px; flex-direction: column; align-items: start; }

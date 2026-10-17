@@ -32,6 +32,10 @@ export default function NewspaperHome() {
   useEffect(() => {
     let active = true;
     const objectUrls: string[] = [];
+    // A retry replaces this edition rather than retaining stale CMS rows or
+    // object URLs revoked by the previous attempt's cleanup.
+    setFragments([]);
+    setPhotographs([]);
     setFragmentState('loading');
     setGalleryState('loading');
     listEntries('fragments').then(entries => {

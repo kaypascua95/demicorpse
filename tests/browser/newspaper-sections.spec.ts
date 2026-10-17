@@ -86,8 +86,58 @@ async function expectSectionLayout(page: Page) {
 }
 
 async function attachFixtureScreenshot(page: Page, testInfo: TestInfo, section: string) {
+  // Record the normal top-of-page view, not a keyboard-focused control or a
+  // sticky header stranded at the scroll position of the interaction above.
+  await page.mouse.move(0, 0);
+  await page.evaluate(() => {
+    if (document.activeElement instanceof HTMLElement) document.activeElement.blur();
+    window.scrollTo({ left: 0, top: 0, behavior: 'instant' });
+  });
+  await expect.poll(() => page.evaluate(() => window.scrollY)).toBe(0);
+  await page.evaluate(async () => { await document.fonts.ready; });
+
+  if (section === 'gallery') {
+    await expect(page.locator('.gallery-layout-modal')).toHaveCount(0);
+    let previousBounds: number[] | undefined;
+    let stableSamples = 0;
+    await expect.poll(async () => {
+      const samples = await page.locator('.gallery-layout-cell').evaluateAll(cells => cells.map(cell => {
+        const card = cell.querySelector<HTMLElement>('.gallery-layout-card')!;
+        const image = card.querySelector<HTMLImageElement>('img')!;
+        const cellBounds = cell.getBoundingClientRect();
+        const cardBounds = card.getBoundingClientRect();
+        const imageBounds = image.getBoundingClientRect();
+        const contained = (bounds: DOMRect) => bounds.width > 0 && bounds.height > 0
+          && bounds.left >= cellBounds.left - 1 && bounds.right <= cellBounds.right + 1
+          && bounds.top >= cellBounds.top - 1 && bounds.bottom <= cellBounds.bottom + 1;
+        return {
+          loaded: image.complete && image.naturalWidth > 0 && image.naturalHeight > 0,
+          rendered: getComputedStyle(card).visibility === 'visible' && getComputedStyle(image).visibility === 'visible'
+            && Number(getComputedStyle(card).opacity) > 0 && Number(getComputedStyle(image).opacity) > 0,
+          contained: contained(cardBounds) && contained(imageBounds),
+          animating: card.getAnimations({ subtree: true }).some(animation => animation.playState === 'running'),
+          bounds: [cellBounds.x, cellBounds.y, cellBounds.width, cellBounds.height,
+            cardBounds.x, cardBounds.y, cardBounds.width, cardBounds.height,
+            imageBounds.x, imageBounds.y, imageBounds.width, imageBounds.height],
+        };
+      }));
+      const currentBounds = samples.flatMap(sample => sample.bounds);
+      const valid = samples.length === photographs.length
+        && samples.every(sample => sample.loaded && sample.rendered && sample.contained && !sample.animating);
+      const unchanged = previousBounds?.length === currentBounds.length
+        && currentBounds.every((value, index) => Math.abs(value - previousBounds![index]) < 0.1);
+      stableSamples = valid && unchanged ? stableSamples + 1 : 0;
+      previousBounds = currentBounds;
+      // Framer projection can continue on requestAnimationFrame after the
+      // modal disappears. Require three settled samples, not a fixed sleep.
+      return stableSamples >= 3;
+    }, { timeout: 10_000, intervals: [100, 100, 200, 250],
+      message: 'Gallery images must load and settle inside their original cells before capture' }).toBe(true);
+  }
+
+  await expect.poll(() => page.evaluate(() => window.scrollY)).toBe(0);
   const path = testInfo.outputPath(`newspaper-${section}-fixture-${testInfo.project.name}.png`);
-  await page.screenshot({ path, fullPage: true, animations: 'disabled' });
+  await page.screenshot({ path, fullPage: true });
   await testInfo.attach(`${section} ${testInfo.project.name} (mock content fixtures, not live content)`, {
     path, contentType: 'image/png',
   });

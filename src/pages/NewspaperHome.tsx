@@ -7,6 +7,7 @@ import { listEntries, type Entry } from '@/lib/cms';
 import { useLatestGallery } from '@/hooks/useLatestGallery';
 import { SiteLink } from '@/lib/navigation';
 import { ArchiveCorners } from '@/components/ArchiveCorners';
+import { ArchiveCat, morrowIdleSprite } from '@/components/ArchiveCat';
 
 type LoadState = 'loading' | 'ready' | 'error';
 
@@ -53,7 +54,7 @@ export default function NewspaperHome() {
       </figure>
       <aside className="newspaper-moon">
         <EditorialReveal as="p" className="newspaper-label">001 / Coming Soon</EditorialReveal>
-        <EditorialReveal as="h2" delay={0.15}><SiteLink href="/dear-moon/">Dear<br />Moon</SiteLink></EditorialReveal>
+        <EditorialReveal as="h2" delay={0.15}><SiteLink href="/dear-moon/">Dear Moon</SiteLink></EditorialReveal>
         <span className="newspaper-short-rule" aria-hidden="true" />
         <EditorialReveal as="p" className="newspaper-moon-note" delay={0.3}>A collection of prose and poetry, coming soon.</EditorialReveal>
         <div className="newspaper-moon-bottom">
@@ -109,7 +110,7 @@ export default function NewspaperHome() {
       </section>
       <div className="newspaper-closing">
         <ArchiveCorners />
-        <footer className="newspaper-colophon newspaper-bottom-colophon"><span>DemiCorpse</span><SiteLink href="/colophon/">Colophon ↗</SiteLink></footer>
+        <footer className="newspaper-colophon newspaper-bottom-colophon"><div className="newspaper-colophon-links"><span>DemiCorpse</span><SiteLink href="/colophon/">Colophon ↗</SiteLink></div><ArchiveCat sprite={morrowIdleSprite} /></footer>
       </div>
     </div>
   </main>;

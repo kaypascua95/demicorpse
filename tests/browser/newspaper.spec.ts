@@ -97,6 +97,14 @@ test('approved Ko-fi and Spotify destinations stay private until visitor interac
   await expect(support).toHaveAttribute('href', 'https://ko-fi.com/demic0rpse');
   await expect(support).toHaveAttribute('target', '_blank');
   await expect(support).toHaveAttribute('rel', 'noopener noreferrer');
+  await expect(support).toHaveClass(/cms-button cms-primary/);
+  expect(await support.evaluate(element => {
+    const style = getComputedStyle(element);
+    return style.backgroundColor === 'rgb(114, 43, 42)'
+      && style.color === 'rgb(239, 232, 220)'
+      && style.borderRadius === '0px' && style.fontFamily.includes('DM Mono')
+      && element.getBoundingClientRect().height >= 44;
+  })).toBe(true);
   await expect(widgets.getByRole('button', { name: 'Support link coming soon', exact: true })).toHaveCount(0);
   await expect(widgets.getByRole('button', { name: 'Load Spotify player', exact: true })).toBeEnabled();
   await expect(widgets.locator('iframe, audio')).toHaveCount(0);
@@ -120,6 +128,88 @@ test('approved Ko-fi and Spotify destinations stay private until visitor interac
   await page.getByRole('button', { name: 'DemiCorpse home', exact: true }).click();
   await expect(widgets.getByRole('button', { name: 'Load Spotify player', exact: true })).toBeEnabled();
   expect(providerRequests).toEqual([]);
+});
+
+test('Morrow uses the original idle frames, pauses offscreen, and keeps keyboard hide state across navigation', async ({ page }) => {
+  await mockCms(page);
+  await page.goto('/');
+  await expect(page.locator('.archive-cat-dock')).toHaveCount(0);
+  await page.getByRole('button', { name: 'ENTER', exact: true }).click();
+  await expectNewspaper(page);
+  const sprite = page.locator('.archive-cat-sprite');
+  await sprite.scrollIntoViewIfNeeded();
+  await expect(sprite).toHaveAttribute('aria-hidden', 'true');
+  await expect(sprite).toHaveCSS('background-image', /morrow-idle\.png/);
+  await expect(sprite).toHaveAttribute('data-paused', 'false');
+  await expect.poll(() => sprite.getAttribute('data-frame'), { timeout: 6000 }).not.toBe('0');
+  const dock = page.locator('.archive-cat-dock');
+  expect(await dock.evaluate(element => {
+    const bounds = element.getBoundingClientRect();
+    const art = element.querySelector('.archive-cat-sprite')!.getBoundingClientRect();
+    const footer = element.closest('footer')!;
+    return bounds.left >= 0 && bounds.right <= innerWidth
+      && [...footer.querySelectorAll('a, button')].every(control => {
+        const c = control.getBoundingClientRect();
+        return c.right <= art.left || c.left >= art.right || c.bottom <= art.top || c.top >= art.bottom;
+      });
+  })).toBe(true);
+  await page.evaluate(() => scrollTo({ top: 0, behavior: 'instant' }));
+  await expect(sprite).toHaveAttribute('data-paused', 'true');
+  const pausedFrame = await sprite.getAttribute('data-frame');
+  await page.waitForTimeout(400);
+  await expect(sprite).toHaveAttribute('data-frame', pausedFrame!);
+  const hide = page.getByRole('button', { name: 'Hide cat', exact: true });
+  await hide.scrollIntoViewIfNeeded();
+  await hide.focus();
+  await page.keyboard.press('Enter');
+  await expect(sprite).toHaveCount(0);
+  await expect(page.getByRole('button', { name: 'Show cat', exact: true })).toBeFocused();
+  await page.getByRole('button', { name: 'JOURNAL', exact: true }).click();
+  await expect(page.getByRole('button', { name: 'Show cat', exact: true })).toBeVisible();
+  await expect(sprite).toHaveCount(0);
+  await page.goBack();
+  await expectNewspaper(page);
+  const show = page.getByRole('button', { name: 'Show cat', exact: true });
+  await show.scrollIntoViewIfNeeded();
+  await show.focus();
+  await page.keyboard.press('Enter');
+  await expect(sprite).toBeVisible();
+  await expect(hide).toBeFocused();
+  await expectNoHorizontalOverflow(page);
+});
+
+test('Morrow is a static original frame under reduced motion and remains dismissible', async ({ page }, testInfo) => {
+  await page.emulateMedia({ reducedMotion: 'reduce' });
+  await mockCms(page);
+  await page.goto('/?enter=1');
+  await expectNewspaper(page);
+  const sprite = page.locator('.archive-cat-sprite');
+  await sprite.scrollIntoViewIfNeeded();
+  await expect(sprite).toHaveAttribute('data-frame', '0');
+  await expect(sprite).toHaveAttribute('data-paused', 'true');
+  await page.waitForTimeout(500);
+  await expect(sprite).toHaveAttribute('data-frame', '0');
+  const path = testInfo.outputPath(`newspaper-morrow-${testInfo.project.name}.png`);
+  await page.locator('.newspaper-bottom-colophon').screenshot({ path });
+  await testInfo.attach(`Original Morrow cat in the actual ${testInfo.project.name} footer, reduced-motion still`, { path, contentType: 'image/png' });
+  await page.getByRole('button', { name: 'Hide cat', exact: true }).click();
+  await page.getByRole('button', { name: 'Show cat', exact: true }).click();
+  await expect(sprite).toHaveAttribute('data-frame', '0');
+  await expect(sprite).toHaveAttribute('data-paused', 'true');
+});
+
+test('a missing decorative cat never blocks the archive or leaves broken-image controls', async ({ page }) => {
+  let requests = 0;
+  await page.route('**/morrow-idle.png', async route => { requests++; await route.abort('failed'); });
+  await mockCms(page);
+  await page.goto('/?enter=1');
+  await expectNewspaper(page);
+  await expect.poll(() => requests).toBeGreaterThan(0);
+  await expect(page.locator('.archive-cat-dock')).toHaveCount(0);
+  await expect(page.getByRole('link', { name: /Support on Ko-fi/ })).toBeVisible();
+  await page.getByRole('link', { name: 'Colophon ↗', exact: true }).click();
+  await expect(page).toHaveURL(/\/colophon\/$/);
+  await expect(page.locator('.archive-cat-dock')).toHaveCount(0);
 });
 
 
@@ -287,6 +377,8 @@ async function expectNewspaper(page: Page) {
   await expect(home.getByRole('img', { name: 'DemiCorpse moon', exact: true })).toBeVisible();
   await expect(home.locator('.brand-moon image')).toHaveAttribute('href', '/demicorpse-logo.png');
   await expect(page.locator('.newspaper-masthead h1 img')).toHaveAttribute('src', '/demicorpse-logo.png');
+  await expect(page.locator('.newspaper-established')).toHaveText('Est. 2026');
+  await expect(page.locator('.newspaper-established')).toBeVisible();
   await expect(page.locator('#persistent-video')).toHaveCount(1);
 }
 
@@ -362,6 +454,17 @@ test('the direct home route presents real published fragments and photographs', 
   expect(galleryRequest?.searchParams.get('status')).toBe('eq.published');
   expect(galleryRequest?.searchParams.get('order')).toBe('created_at.desc,id.desc');
   await expectNoHorizontalOverflow(page);
+  expect(await page.locator('.newspaper-page').evaluate(element => {
+    const paper = getComputedStyle(element).backgroundColor;
+    const masthead = element.querySelector('.newspaper-masthead')!;
+    const logo = masthead.querySelector('.newspaper-logo-lockup')!.getBoundingClientRect();
+    const mastheadBounds = masthead.getBoundingClientRect();
+    const centered = Math.abs((logo.left + logo.right) / 2 - (mastheadBounds.left + mastheadBounds.right) / 2) < 2;
+    const feature = element.querySelector('.newspaper-feature')!.getBoundingClientRect();
+    const moon = element.querySelector('.newspaper-moon')!.getBoundingClientRect();
+    const cover = element.querySelector('.newspaper-cover-link')!.getBoundingClientRect();
+    return { paper, centered, balancedColumns: innerWidth <= 700 || (moon.width / feature.width > .28 && cover.height < cover.width * .65) };
+  })).toEqual({ paper: 'rgb(239, 232, 220)', centered: true, balancedColumns: true });
 
   // Trigger the real once-only reveals before capturing the entire page;
   // a full-page screenshot alone does not bring offscreen text into view.

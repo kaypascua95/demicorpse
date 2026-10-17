@@ -47,6 +47,7 @@
 .newspaper-skip:focus { transform: none; }
 .newspaper-masthead { display: grid; grid-template-columns: minmax(0, 1fr) 120px 160px; gap: 28px; align-items: end; padding: 20px 0 15px; background: rgba(9, 10, 9, .5); }
 .newspaper-edition { padding: 0 0 2px; font: 12px/1.6 'DM Mono', monospace; letter-spacing: .2em; text-transform: uppercase; }
+.newspaper-established { display: block; margin-bottom: 8px; white-space: nowrap; font-size: 9px; letter-spacing: .16em; }
 .newspaper-edition i { display: block; width: 70px; height: 2px; margin-top: 15px; background: #722b2a; }
 .newspaper-masthead-note { margin: 0; padding-bottom: 2px; font: 8px/1.9 'DM Mono', monospace; text-transform: uppercase; letter-spacing: .2em; }
 .newspaper-masthead-note span { display: block; border-top: 1px solid #aaa395; margin-top: 12px; padding-top: 5px; }
@@ -138,6 +139,7 @@
   .global-header.newspaper-header > .portrait-primary-nav button { font-size: 16px !important; min-height: 40px; padding: 10px 0 !important; }
   .newspaper-masthead { grid-template-columns: 1fr; gap: 15px; padding: 24px 0 12px; }
   .newspaper-edition { display: flex; justify-content: space-between; align-items: center; font-size: 8px; letter-spacing: .18em; padding: 0 2px; }
+  .newspaper-edition .newspaper-established { margin-bottom: 0; word-spacing: normal; }
   .newspaper-edition span br { display: none; }
   .newspaper-edition span { word-spacing: 6px; }
   .newspaper-edition i { width: 58px; margin: 0; }

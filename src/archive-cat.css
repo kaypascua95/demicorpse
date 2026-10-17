@@ -1,0 +1,58 @@
+/* Deliberately in flow: the cat never floats over links, players or controls. */
+.archive-cat-dock {
+  display: grid;
+  grid-template-columns: auto 44px;
+  align-items: start;
+  gap: 4px;
+  box-sizing: border-box;
+  width: fit-content;
+  max-width: 100%;
+  margin: 0 0 0 auto;
+  padding: 0;
+}
+
+.archive-cat-sprite {
+  width: min(90px, calc(140px * var(--archive-cat-ratio, 1)));
+  max-width: 100%;
+  background-repeat: no-repeat;
+  pointer-events: none;
+  user-select: none;
+  /* The sheet is decoration, not an image announced to assistive technology. */
+}
+
+.archive-cat-dock .archive-cat-toggle {
+  min-width: 44px;
+  min-height: 44px;
+  max-width: 100%;
+  padding: 8px;
+  border: 1px solid currentColor;
+  border-radius: 0;
+  background: transparent;
+  color: var(--oxblood, #722b2a);
+  font: 9px/1.5 'DM Mono', monospace;
+  letter-spacing: .04em;
+  cursor: pointer;
+  overflow-wrap: anywhere;
+}
+.archive-cat-toggle > span { font: 22px/1 Georgia, serif; }
+.archive-cat-dock:not(:has(.archive-cat-sprite)) { grid-template-columns: 76px; }
+
+.archive-cat-dock .archive-cat-toggle:hover {
+  background: var(--paper, #eee8db);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.archive-cat-dock .archive-cat-toggle:focus-visible {
+  outline: 2px solid currentColor;
+  outline-offset: 3px;
+}
+
+@media (max-width: 700px) {
+  .archive-cat-sprite { width: min(74px, calc(112px * var(--archive-cat-ratio, 1))); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .archive-cat-sprite,
+  .archive-cat-toggle { animation: none !important; transition: none !important; }
+}

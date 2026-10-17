@@ -21,9 +21,9 @@ export function ArchiveCorners() {
         <div><h2 id="archive-support-title">Support the archive</h2>
           <p>A small kindness for this little corner of the internet.</p></div>
       </div>
-      {support ? <a className="archive-corner-action" href={support} target="_blank" rel="noopener noreferrer">
+      {support ? <a className="archive-corner-action archive-support-action cms-button cms-primary" href={support} target="_blank" rel="noopener noreferrer">
         Support on Ko-fi<span aria-hidden="true">↗</span><span className="archive-corner-sr-only"> (opens in a new tab)</span>
-      </a> : <button className="archive-corner-action" type="button" disabled>Support link coming soon<span aria-hidden="true">↗</span></button>}
+      </a> : <button className="archive-corner-action archive-support-action cms-button cms-primary" type="button" disabled>Support link coming soon<span aria-hidden="true">↗</span></button>}
     </article>
     <article className="archive-corner" aria-labelledby="archive-listening-title">
       <div className="archive-corner-heading">

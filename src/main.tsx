@@ -7,3 +7,4 @@ import "./newspaper-sections.css";
 
 import "./newspaper-entry.css";
 import "./newspaper-admin.css";
+import "./newspaper-print.css";

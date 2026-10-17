@@ -86,6 +86,8 @@ async function expectSectionLayout(page: Page) {
   await expect(mastheadLogo).toBeVisible();
   await expect(mastheadLogo).toHaveAttribute('src', '/demicorpse-logo.png');
   await expect(page.locator('.newspaper-masthead a')).toHaveAttribute('href', '/?enter=1');
+  await expect(page.locator('.newspaper-established')).toHaveText('Est. 2026');
+  await expect(page.locator('.newspaper-established')).toBeVisible();
   await expectBrandMoon(page);
   await expect.poll(() => mastheadLogo.evaluate(image => {
     const bounds = image.getBoundingClientRect();

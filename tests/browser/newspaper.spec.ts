@@ -1,4 +1,5 @@
 import { expect, test, type Page } from '@playwright/test';
+import { parseSupportProfileUrl, parseSpotifyPlaylistUrl } from '../../src/lib/archive-links';
 
 const fragment = {
   id: '11111111-1111-4111-8111-111111111111',
@@ -39,6 +40,52 @@ const photograph = {
 const retiredCopy = /somewhere\s*between\s*alive\s*and\s*archived|the\s*night\s*archive/i;
 const calligraphyPhrase = 'words, words and everything in between';
 const dearMoonCopy = 'A collection of prose and poetry, coming soon.';
+
+test('archive widget configuration accepts only supported official HTTPS destinations', () => {
+  expect(parseSupportProfileUrl('https://ko-fi.com/examplecreator')).toBe('https://ko-fi.com/examplecreator');
+  expect(parseSupportProfileUrl('https://www.buymeacoffee.com/examplecreator')).toBe('https://buymeacoffee.com/examplecreator');
+  const playlist = 'https://open.spotify.com/playlist/0123456789ABCDEFGHIJKL';
+  expect(parseSpotifyPlaylistUrl(playlist)).toBe(playlist);
+  expect(parseSpotifyPlaylistUrl(`${playlist}?si=shared-token`)).toBe(playlist);
+  for (const invalid of [null, '', 'javascript:alert(1)', 'http://ko-fi.com/examplecreator', 'https://ko-fi.com.evil.test/examplecreator', 'https://user:pass@ko-fi.com/examplecreator', 'https://ko-fi.com:444/examplecreator', 'https://ko-fi.com/', 'https://example.test/tips']) {
+    expect(parseSupportProfileUrl(invalid), `Reject unsupported support URL: ${invalid}`).toBeNull();
+  }
+  for (const invalid of [null, '', 'javascript:alert(1)', 'http://open.spotify.com/playlist/0123456789ABCDEFGHIJKL', 'https://open.spotify.com.evil.test/playlist/0123456789ABCDEFGHIJKL', 'https://user:pass@open.spotify.com/playlist/0123456789ABCDEFGHIJKL', 'https://open.spotify.com:444/playlist/0123456789ABCDEFGHIJKL', 'https://open.spotify.com/track/0123456789ABCDEFGHIJKL', 'https://open.spotify.com/playlist/not-a-playlist']) {
+    expect(parseSpotifyPlaylistUrl(invalid), `Reject unsupported playlist URL: ${invalid}`).toBeNull();
+  }
+});
+
+test('support and listening previews are honest, inactive, and do not contact providers', async ({ page }, testInfo) => {
+  const providerRequests: string[] = [];
+  page.on('request', request => {
+    if (/spotify|ko-fi|buymeacoffee/i.test(new URL(request.url()).hostname)) providerRequests.push(request.url());
+  });
+  await mockCms(page);
+  await page.goto('/?enter=1');
+  await expectNewspaper(page);
+  const widgets = page.getByRole('region', { name: 'Support and listening', exact: true });
+  await widgets.scrollIntoViewIfNeeded();
+  await expect(widgets.getByRole('heading', { name: 'Support the archive', exact: true })).toBeVisible();
+  await expect(widgets.getByRole('heading', { name: 'Listening corner', exact: true })).toBeVisible();
+  await expect(widgets.getByText('Preview', { exact: true })).toHaveCount(2);
+  await expect(widgets.getByRole('button', { name: 'Support link coming soon', exact: true })).toBeDisabled();
+  await expect(widgets.getByRole('button', { name: 'Playlist not connected', exact: true })).toBeDisabled();
+  await expect(widgets.locator('a, iframe, audio')).toHaveCount(0);
+  await expectNoHorizontalOverflow(page);
+  expect(await widgets.evaluate(element => [...element.querySelectorAll('button')].every(button => {
+    const bounds = button.getBoundingClientRect();
+    const card = button.closest('article')!.getBoundingClientRect();
+    return bounds.height >= 44 && bounds.left >= card.left - 1 && bounds.right <= card.right + 1;
+  }))).toBe(true);
+  const path = testInfo.outputPath(`newspaper-widget-previews-${testInfo.project.name}.png`);
+  await widgets.screenshot({ path });
+  await testInfo.attach(`Support and listening ${testInfo.project.name} (inactive previews; no connected accounts)`, { path, contentType: 'image/png' });
+  await page.getByRole('button', { name: 'JOURNAL', exact: true }).click();
+  await expect(widgets).toHaveCount(0);
+  await page.getByRole('button', { name: 'DemiCorpse home', exact: true }).click();
+  await expect(widgets.getByRole('button', { name: 'Playlist not connected', exact: true })).toBeDisabled();
+  expect(providerRequests).toEqual([]);
+});
 
 type CmsState = 'content' | 'empty' | 'error';
 type CmsResponses = CmsState | { fragments: CmsState; gallery: CmsState };

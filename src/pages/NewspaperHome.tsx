@@ -6,6 +6,7 @@ import { NewspaperMasthead } from '@/components/NewspaperMasthead';
 import { listEntries, type Entry } from '@/lib/cms';
 import { useLatestGallery } from '@/hooks/useLatestGallery';
 import { SiteLink } from '@/lib/navigation';
+import { ArchiveCorners } from '@/components/ArchiveCorners';
 
 type LoadState = 'loading' | 'ready' | 'error';
 
@@ -107,6 +108,7 @@ export default function NewspaperHome() {
         <GradientMenu />
         <div className="newspaper-colophon"><span>DemiCorpse</span><SiteLink href="/colophon/">Colophon ↗</SiteLink></div>
       </footer>
+      <ArchiveCorners />
     </div>
   </main>;
 }

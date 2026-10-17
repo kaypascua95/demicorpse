@@ -379,8 +379,19 @@ test('owner dashboard, full editor, upload, private preview and public-session s
   await collections.getByRole('button', { name: 'journal', exact: true }).click();
   await expectOwner(page);
   await page.locator('.cms-list-item').filter({ hasText: privateJournal.title }).click();
-  for (const label of ['Title', 'Date', 'Address / slug', 'A few words before the entry', 'Pull quote / highlighted thought', 'Writing / Markdown', 'Tags / separated by commas']) {
+  for (const label of ['Title', 'Date', 'Address / slug', 'Tags / separated by commas']) {
     await expect(page.getByLabel(label, { exact: true })).toBeVisible();
+  }
+  // React initializes textarea textContent with its value. Label text matching
+  // can include that content, while the accessible textbox name stays stable.
+  for (const [name, value] of [
+    ['A few words before the entry', privateJournal.excerpt],
+    ['Pull quote / highlighted thought', privateJournal.quote],
+    ['Writing / Markdown', privateJournal.content],
+  ]) {
+    const textbox = page.getByRole('textbox', { name, exact: true });
+    await expect(textbox).toBeVisible();
+    await expect(textbox).toHaveValue(value);
   }
   await expect(page.getByLabel('Image layout')).toHaveValue('full');
   await expect(page.getByLabel('Upload media', { exact: true })).toHaveAttribute('type', 'file');
@@ -410,7 +421,7 @@ test('owner dashboard, full editor, upload, private preview and public-session s
   expect(fixture.mutations.some(request => request.method === 'PATCH' && request.path === '/rest/v1/cms_entries')).toBe(true);
 
   await page.getByLabel('Title', { exact: true }).fill('An unsaved private fixture');
-  await page.getByLabel('Writing / Markdown', { exact: true }).fill(`${prose}\n\nOnly this private preview includes this unsaved sentence.`);
+  await page.getByRole('textbox', { name: 'Writing / Markdown', exact: true }).fill(`${prose}\n\nOnly this private preview includes this unsaved sentence.`);
   const writesBeforePreview = fixture.mutations.length;
   for (let repeat = 0; repeat < 2; repeat++) {
     await page.getByRole('button', { name: 'Preview', exact: true }).click();

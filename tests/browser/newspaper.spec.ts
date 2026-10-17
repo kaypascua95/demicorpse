@@ -81,11 +81,17 @@ test('approved Ko-fi and Spotify destinations stay private until visitor interac
   await widgets.scrollIntoViewIfNeeded();
   await expect(widgets.getByRole('heading', { name: 'Support the archive', exact: true })).toBeVisible();
   await expect(widgets.getByRole('heading', { name: 'Listening corner', exact: true })).toBeVisible();
-  await expect(widgets.locator('.archive-corner-label')).toHaveText(['004 / Support', '005 / Spotify']);
+  await expect(widgets.locator('.archive-corner-label')).toHaveText(['005 / Support', '006 / Spotify']);
   await expect(page.locator('.newspaper-moon > .newspaper-label')).toHaveText('001 / Coming Soon');
   await expect(page.locator('.newspaper-fragments .newspaper-section-head h2')).toHaveText('002 / Recent fragments');
   await expect(page.locator('.newspaper-contact-sheet .newspaper-section-head h2')).toHaveText('003 / Gallery');
-  await expect(page.locator('#elsewhere .newspaper-label')).toHaveText('006 / Elsewhere');
+  await expect(page.locator('#about .newspaper-label')).toHaveText('004 / About');
+  await expect(page.locator('#elsewhere .newspaper-label')).toHaveText('007 / Elsewhere');
+  // The existing document order is also the complete, gap-free section sequence.
+  await expect(page.locator('.newspaper-moon > .newspaper-label, .newspaper-section-head h2, #about .newspaper-label, .archive-corner-label, #elsewhere .newspaper-label')).toHaveText([
+    '001 / Coming Soon', '002 / Recent fragments', '003 / Gallery', '004 / About',
+    '005 / Support', '006 / Spotify', '007 / Elsewhere',
+  ]);
   const colophon = page.locator('.newspaper-bottom-colophon');
   await expect(colophon).toContainText('DemiCorpse');
   await expect(colophon.getByRole('link', { name: 'Colophon ↗', exact: true })).toHaveAttribute('href', '/colophon/');

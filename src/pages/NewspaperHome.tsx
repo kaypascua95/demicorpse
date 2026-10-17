@@ -92,7 +92,7 @@ export default function NewspaperHome() {
       </section>
 
       <section className="newspaper-about" id="about">
-        <div><p className="newspaper-label">About</p><EditorialReveal as="h2">Welcome to my<br />little corner of<br /><em>the internet.</em></EditorialReveal></div>
+        <div><p className="newspaper-label">004 / About</p><EditorialReveal as="h2">Welcome to my<br />little corner of<br /><em>the internet.</em></EditorialReveal></div>
         <div className="newspaper-about-copy">
           <EditorialReveal as="p" className="newspaper-about-lead">I’m Kayla, though around here,<br />I go by DemiCorpse.</EditorialReveal>
           <div className="newspaper-about-columns">
@@ -107,7 +107,7 @@ export default function NewspaperHome() {
       <div className="newspaper-closing">
         <ArchiveCorners />
         <section className="newspaper-footer" id="elsewhere">
-          <div><p className="newspaper-label">006 / Elsewhere</p><EditorialReveal as="h2">Leave your mark.<br /><em>Find me elsewhere.</em></EditorialReveal><p>Follow along through the other corners of the internet where DemiCorpse still wanders.</p></div>
+          <div><p className="newspaper-label">007 / Elsewhere</p><EditorialReveal as="h2">Leave your mark.<br /><em>Find me elsewhere.</em></EditorialReveal><p>Follow along through the other corners of the internet where DemiCorpse still wanders.</p></div>
           <GradientMenu />
         </section>
         <footer className="newspaper-colophon newspaper-bottom-colophon"><div className="newspaper-colophon-links"><span>DemiCorpse</span><SiteLink href="/colophon/">Colophon ↗</SiteLink></div><ArchiveCat sprite={morrowIdleSprite} /></footer>

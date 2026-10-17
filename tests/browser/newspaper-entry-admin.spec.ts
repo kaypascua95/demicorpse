@@ -136,7 +136,7 @@ async function expectNoOverflow(page: Page) {
 }
 async function expectReadingPaper(page: Page, collection: 'journal' | 'fragments', title: string) {
   await expect(page.locator('.newspaper-section-paper .newspaper-entry-page')).toBeVisible();
-  await expect(page.locator('.newspaper-section-paper')).toHaveCSS('background-color', 'rgb(234, 227, 213)');
+  await expect(page.locator('.newspaper-section-paper')).toHaveCSS('background-color', 'rgb(239, 232, 220)');
   await expect(page.locator(`.newspaper-reading-entry--${collection}`)).toBeVisible();
   await expect(page.locator('.newspaper-reading-entry > header h1')).toHaveText(title);
   await expect(page.locator('.newspaper-reading-entry > header h1')).toHaveCSS('color', 'rgb(23, 24, 20)');

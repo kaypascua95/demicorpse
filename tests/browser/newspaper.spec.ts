@@ -1,5 +1,9 @@
 import { expect, test, type Page } from '@playwright/test';
+import { readFileSync } from 'node:fs';
 import { archiveLinks, parseSupportProfileUrl, parseSpotifyPlaylistUrl } from '../../src/lib/archive-links';
+
+const deploymentCsp = readFileSync(new URL('../../netlify.toml', import.meta.url), 'utf8')
+  .match(/^Content-Security-Policy = "([^"]+)"$/m)?.[1] || '';
 
 const fragment = {
   id: '11111111-1111-4111-8111-111111111111',
@@ -42,6 +46,14 @@ const calligraphyPhrase = 'words, words and everything in between';
 const dearMoonCopy = 'A collection of prose and poetry, coming soon.';
 
 test('archive widget configuration accepts only supported official HTTPS destinations', () => {
+  const directives = Object.fromEntries(deploymentCsp.split(';').map(directive => {
+    const [name, ...sources] = directive.trim().split(/\s+/);
+    return [name, sources];
+  }));
+  expect(directives['frame-src']).toEqual(['https://player.twitch.tv', 'https://www.youtube-nocookie.com', 'https://open.spotify.com']);
+  expect(directives['script-src']).toEqual(["'self'"]);
+  expect(directives['object-src']).toEqual(["'none'"]);
+  expect(directives['frame-ancestors']).toEqual(["'none'"]);
   expect(parseSupportProfileUrl('https://ko-fi.com/examplecreator')).toBe('https://ko-fi.com/examplecreator');
   expect(parseSupportProfileUrl('https://www.buymeacoffee.com/examplecreator')).toBe('https://buymeacoffee.com/examplecreator');
   expect(archiveLinks.supportUrl).toBe('https://ko-fi.com/demic0rpse');
@@ -97,7 +109,7 @@ test('approved Ko-fi and Spotify destinations stay private until visitor interac
 });
 
 
-test('Spotify is click-to-load with safe permissions and a usable fallback when the provider fails', async ({ page }) => {
+test('Spotify works under the deployed frame policy with click-to-load and provider-failure fallback', async ({ page }) => {
   const embedUrl = 'https://open.spotify.com/embed/playlist/5hXIZZcqf438PiHmjDfMHI';
   const requests: string[] = [];
   let unavailable = true;
@@ -106,8 +118,17 @@ test('Spotify is click-to-load with safe permissions and a usable fallback when 
     if (unavailable) await route.abort('failed');
     else await route.fulfill({ status: 503, contentType: 'text/html', body: '<!doctype html><html><body><h1>Fixture provider unavailable</h1></body></html>' });
   });
+  // Vite preview does not read Netlify headers. Apply the real policy to this
+  // document, substituting only the isolated CMS fixture origin for live data.
+  // A missing Spotify frame allowance must block the iframe and fail this test.
+  const testCsp = deploymentCsp.replace('https://gzgfiyaqgihbzfmhnvlh.supabase.co', 'https://cms-test.supabase.co');
+  await page.route(url => url.origin === 'http://127.0.0.1:4173' && url.pathname === '/', async route => {
+    const response = await route.fetch();
+    await route.fulfill({ response, headers: { ...response.headers(), 'content-security-policy': testCsp } });
+  });
   await mockCms(page);
-  await page.goto('/?enter=1');
+  const document = await page.goto('/?enter=1');
+  expect(document?.headers()['content-security-policy']).toBe(testCsp);
   const widgets = page.getByRole('region', { name: 'Support and listening', exact: true });
   const load = widgets.getByRole('button', { name: 'Load Spotify player', exact: true });
   const fallback = widgets.getByRole('link', { name: /Open in Spotify/ });

@@ -10,7 +10,8 @@
 }
 .global-header.newspaper-header {
   padding-inline: 24px !important;
-  background: #efe8dcf5;
+  /* Beat the legacy portrait header's !important dark surface. */
+  background: #efe8dcf5 !important;
   border: 1px solid #b5ab99;
   border-top: 2px solid #722b2a;
   color: #24221d;

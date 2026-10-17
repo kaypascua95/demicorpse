@@ -401,6 +401,13 @@ async function expectNewspaper(page: Page) {
   await expect(page.locator('.newspaper-masthead').getByRole('heading', { level: 1, name: 'DemiCorpse', exact: true })).toBeVisible();
   await expect(page.locator('.newspaper-page h1')).toHaveCount(1);
   await expect(page.locator('.main-header')).toHaveCount(1);
+  const header = page.locator('.global-header.newspaper-header');
+  const headerPaper = await header.evaluate(element => getComputedStyle(element).backgroundColor.match(/[\d.]+/g)!.map(Number));
+  expect(headerPaper.slice(0, 3)).toEqual([239, 232, 220]);
+  expect(headerPaper[3] ?? 1).toBeGreaterThanOrEqual(.95);
+  for (const link of await header.locator('.primary-nav button:visible, .portrait-primary-nav button:visible').all()) {
+    await expect(link).toHaveCSS('color', 'rgb(36, 34, 29)');
+  }
   const home = page.getByRole('button', { name: 'DemiCorpse home', exact: true });
   await expect(home.getByRole('img', { name: 'DemiCorpse moon', exact: true })).toBeVisible();
   await expect(home.locator('.brand-moon image')).toHaveAttribute('href', '/demicorpse-logo.png');

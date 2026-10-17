@@ -13,7 +13,7 @@ export function ArchiveCorners() {
   return <section className="archive-corners" aria-label="Support and listening">
     <article className="archive-corner" aria-labelledby="archive-support-title">
       <div className="archive-corner-heading">
-        <p className="archive-corner-label">A little encouragement</p>
+        <p className="archive-corner-label">04 / Support</p>
         {!support && <span className="archive-corner-preview">Preview</span>}
       </div>
       <div className="archive-corner-body">
@@ -27,7 +27,7 @@ export function ArchiveCorners() {
     </article>
     <article className="archive-corner" aria-labelledby="archive-listening-title">
       <div className="archive-corner-heading">
-        <p className="archive-corner-label">Spotify / In the margins</p>
+        <p className="archive-corner-label">05 / Spotify</p>
         {!playlist && <span className="archive-corner-preview">Preview</span>}
       </div>
       <div className="archive-corner-body">

@@ -81,6 +81,16 @@ test('approved Ko-fi and Spotify destinations stay private until visitor interac
   await widgets.scrollIntoViewIfNeeded();
   await expect(widgets.getByRole('heading', { name: 'Support the archive', exact: true })).toBeVisible();
   await expect(widgets.getByRole('heading', { name: 'Listening corner', exact: true })).toBeVisible();
+  await expect(widgets.locator('.archive-corner-label')).toHaveText(['04 / Support', '05 / Spotify']);
+  const colophon = page.locator('.newspaper-bottom-colophon');
+  await expect(colophon).toContainText('DemiCorpse');
+  await expect(colophon.getByRole('link', { name: 'Colophon ↗', exact: true })).toHaveAttribute('href', '/colophon/');
+  expect(await page.locator('.newspaper-closing').evaluate(element => {
+    const sections = element.querySelector('.archive-corners')!;
+    const footer = element.querySelector('.newspaper-bottom-colophon')!;
+    return element.lastElementChild === footer && footer.previousElementSibling === sections
+      && footer.getBoundingClientRect().top >= sections.getBoundingClientRect().bottom;
+  })).toBe(true);
   await expect(widgets.getByText('Preview', { exact: true })).toHaveCount(0);
   await expect(widgets.getByText('femme fatale', { exact: true })).toBeVisible();
   const support = widgets.getByRole('link', { name: /Support on Ko-fi/ });
@@ -99,8 +109,12 @@ test('approved Ko-fi and Spotify destinations stay private until visitor interac
     return bounds.height >= 44 && bounds.left >= card.left - 1 && bounds.right <= card.right + 1;
   }))).toBe(true);
   const path = testInfo.outputPath(`newspaper-kofi-spotify-${testInfo.project.name}.png`);
-  await widgets.screenshot({ path });
-  await testInfo.attach(`DemiCorpse Ko-fi and femme fatale ${testInfo.project.name} (Spotify player not yet loaded)`, { path, contentType: 'image/png' });
+  await page.locator('.newspaper-closing').screenshot({ path });
+  await testInfo.attach(`DemiCorpse numbered support, Spotify and bottom colophon ${testInfo.project.name} (Spotify player not yet loaded)`, { path, contentType: 'image/png' });
+  await colophon.getByRole('link', { name: 'Colophon ↗', exact: true }).click();
+  await expect(page).toHaveURL(/\/colophon\/$/);
+  await page.goBack();
+  await expectNewspaper(page);
   await page.getByRole('button', { name: 'JOURNAL', exact: true }).click();
   await expect(widgets).toHaveCount(0);
   await page.getByRole('button', { name: 'DemiCorpse home', exact: true }).click();
@@ -157,6 +171,10 @@ test('Spotify works under the deployed frame policy with click-to-load and provi
   await page.keyboard.press('Enter');
   await expect(widgets.frameLocator('iframe').getByRole('heading', { name: 'Fixture provider unavailable' })).toBeVisible();
   await expect(fallback).toBeVisible();
+  expect(await page.locator('.newspaper-closing').evaluate(element =>
+    element.querySelector('.newspaper-bottom-colophon')!.getBoundingClientRect().top
+      >= element.querySelector('.archive-corners')!.getBoundingClientRect().bottom,
+  )).toBe(true);
   await expectNoHorizontalOverflow(page);
   expect(requests).toEqual([embedUrl, embedUrl]);
   // Leaving an open or failed player must remove it, not keep background audio.

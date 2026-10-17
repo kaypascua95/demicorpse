@@ -105,6 +105,7 @@
 .newspaper-footer > div > p:not(.newspaper-label) { font: 12px/1.6 'DM Mono', monospace; max-width: 370px; }
 .newspaper-footer .elsewhere-links { justify-content: end; flex-wrap: wrap; margin: 0; }
 .newspaper-colophon { grid-column: 1/-1; display: flex; justify-content: space-between; gap: 20px; border-top: 1px solid #8d887b; padding-top: 18px; font: 8px/1.5 'DM Mono', monospace; text-transform: uppercase; letter-spacing: .12em; }
+.newspaper-bottom-colophon { margin: 0 30px; padding-bottom: 20px; }
 @media (min-width: 1101px) {
   .global-header.newspaper-header > .primary-nav { display: flex !important; }
   .global-header.newspaper-header > .portrait-primary-nav { display: none !important; }
@@ -165,6 +166,7 @@
   .newspaper-footer { grid-template-columns: 1fr; margin: 0 20px; padding-top: 25px; gap: 20px; }
   .newspaper-footer .elsewhere-links { justify-content: start; gap: 12px 20px; }
   .newspaper-colophon { flex-wrap: wrap; font-size: 7px; gap: 12px; }
+  .newspaper-bottom-colophon { margin: 0 20px; }
   .newspaper-colophon span:nth-child(2) { order: 3; width: 100%; }
 }
 @media (prefers-reduced-motion: reduce) {

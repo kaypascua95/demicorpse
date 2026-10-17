@@ -103,12 +103,14 @@ export default function NewspaperHome() {
           </div>
         </div>
       </section>
-      <footer className="newspaper-footer" id="elsewhere">
+      <section className="newspaper-footer" id="elsewhere">
         <div><p className="newspaper-label">003 / Elsewhere</p><EditorialReveal as="h2">Leave your mark.<br /><em>Find me elsewhere.</em></EditorialReveal><p>Follow along through the other corners of the internet where DemiCorpse still wanders.</p></div>
         <GradientMenu />
-        <div className="newspaper-colophon"><span>DemiCorpse</span><SiteLink href="/colophon/">Colophon ↗</SiteLink></div>
-      </footer>
-      <ArchiveCorners />
+      </section>
+      <div className="newspaper-closing">
+        <ArchiveCorners />
+        <footer className="newspaper-colophon newspaper-bottom-colophon"><span>DemiCorpse</span><SiteLink href="/colophon/">Colophon ↗</SiteLink></footer>
+      </div>
     </div>
   </main>;
 }

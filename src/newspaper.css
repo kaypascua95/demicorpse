@@ -1,0 +1,237 @@
+/* Mockup edition. Overrides are scoped to entered landing-page wrappers.
+   The entrance, persistent film, detail pages and CMS retain their own styles. */
+.newspaper-page {
+  --paper: #eae3d5;
+  --ink: #171814;
+  --oxblood: #722b2a;
+  --editorial: 'Cormorant Garamond', 'Times New Roman', serif;
+  position: relative;
+  z-index: 1;
+  width: min(1440px, 94vw);
+  margin: 0 auto 3vw;
+  color: var(--paper);
+  padding-top: 0;
+}
+.newspaper-page a { color: inherit; text-decoration: none; }
+.newspaper-page button { font: inherit; color: inherit; cursor: pointer; }
+.newspaper-page :is(a, button):focus-visible,
+.newspaper-header :is(a, button):focus-visible { outline: 2px solid #b9604d; outline-offset: 5px; }
+.newspaper-page:focus { outline: none; }
+.global-header.newspaper-header {
+  position: sticky !important;
+  inset: auto;
+  top: 0;
+  width: min(1440px, 94vw);
+  margin: 0 auto;
+  height: 76px;
+  padding: 0 !important;
+  display: flex !important;
+  gap: 24px;
+  border-bottom: 1px solid #aaa395;
+  background: rgba(9, 10, 9, .6);
+  backdrop-filter: blur(8px);
+}
+.newspaper-header .main-logo { padding: 0; flex-shrink: 0; }
+.newspaper-identity { display: flex; align-items: center; gap: 22px; color: #eae3d5; text-align: left; }
+.newspaper-identity > span:last-child { border-left: 1px solid #999284; padding: 11px 0 11px 18px; font: 9px/1.7 'DM Mono', monospace; text-transform: uppercase; letter-spacing: .21em; }
+.newspaper-header .primary-nav { margin-left: auto !important; margin-right: 0 !important; gap: 26px !important; }
+.newspaper-header .primary-nav button { font: italic 16px/1.2 'Cormorant Garamond', Georgia, serif; letter-spacing: .03em; color: #eae3d5; }
+.newspaper-header .header-actions { margin-left: 10px; }
+.newspaper-header .more-trigger.group { border: 0 !important; border-radius: 0 !important; }
+.newspaper-header .more-trigger svg { width: 18px; height: 18px; }
+.newspaper-header .more-trigger .menu-line-top { transform: translateY(-5px); }
+.newspaper-header .more-trigger .menu-line-bottom { transform: translateY(5px); }
+.newspaper-header .more-trigger[aria-expanded='true'] .menu-line-top { transform: rotate(315deg); }
+.newspaper-header .more-trigger[aria-expanded='true'] .menu-line-bottom { transform: rotate(135deg); }
+.newspaper-skip { position: absolute; top: 8px; left: 8px; padding: 12px; transform: translateY(-200%); background: #eae3d5; color: #171814; z-index: 10001; }
+.newspaper-skip:focus { transform: none; }
+.newspaper-masthead { display: grid; grid-template-columns: minmax(0, 1fr) 120px 160px; gap: 28px; align-items: end; padding: 20px 0 15px; background: rgba(9, 10, 9, .5); }
+.newspaper-edition { padding: 0 0 2px; font: 12px/1.6 'DM Mono', monospace; letter-spacing: .2em; text-transform: uppercase; }
+.newspaper-established { display: block; margin-bottom: 8px; white-space: nowrap; font-size: 9px; letter-spacing: .16em; }
+.newspaper-edition i { display: block; width: 70px; height: 2px; margin-top: 15px; background: #722b2a; }
+.newspaper-masthead-note { margin: 0; padding-bottom: 2px; font: 8px/1.9 'DM Mono', monospace; text-transform: uppercase; letter-spacing: .2em; }
+.newspaper-masthead-note span { display: block; border-top: 1px solid #aaa395; margin-top: 12px; padding-top: 5px; }
+.newspaper-feature { display: grid; grid-template-columns: minmax(0, 3.15fr) minmax(230px, .85fr); }
+.newspaper-cover { margin: 0; display: flex; flex-direction: column; min-width: 0; background: #171814; }
+.newspaper-cover-link { display: block; position: relative; flex: 1; min-height: 360px; overflow: hidden; }
+.newspaper-cover-link img { display: block; width: 100%; height: 100%; position: absolute; inset: 0; object-fit: cover; object-position: center 48%; filter: grayscale(1) contrast(1.08) brightness(.83); transition: filter .5s; }
+.newspaper-cover-link:hover img { filter: grayscale(.7) contrast(1.05) brightness(.9); }
+.newspaper-photo-open { position: absolute; bottom: 20px; right: 24px; font: 10px 'DM Mono', monospace; text-transform: uppercase; letter-spacing: .14em; color: #fffaf0; text-shadow: 0 1px 4px #000; border-bottom: 1px solid #fffaf080; padding-bottom: 7px; }
+.newspaper-photo-open > span { margin-left: 25px; }
+.newspaper-cover figcaption { background: var(--paper); color: var(--ink); min-height: 46px; padding: 15px 24px; display: flex; gap: 20px; align-items: center; justify-content: space-between; font: 9px/1.6 'DM Mono', monospace; letter-spacing: .025em; }
+.newspaper-cover figcaption > span:last-child { font-size: 8px; text-transform: uppercase; text-align: right; }
+.newspaper-moon { display: flex; flex-direction: column; padding: 28px 30px 24px; background: var(--paper); color: var(--ink); min-width: 0; }
+.newspaper-label { margin: 0; font: 9px/1.6 'DM Mono', monospace; text-transform: uppercase; letter-spacing: .18em; }
+.newspaper-moon > .newspaper-label { padding-bottom: 28px; border-bottom: 1px solid #5b5a50; }
+.newspaper-moon h2 { font: 400 clamp(62px, 7.6vw, 116px)/.78 var(--editorial); letter-spacing: -.065em; margin: 18px 0 28px; }
+.newspaper-short-rule { display: block; width: 32px; height: 1px; background: #5b5a50; }
+.newspaper-moon-note { font: 22px/1.3 var(--editorial); letter-spacing: .03em; margin: 16px 0 20px; }
+.newspaper-moon-bottom { margin-top: auto; padding-top: 22px; }
+.newspaper-moon-bottom p { color: var(--oxblood); font: italic 24px/1.1 var(--editorial); margin: 0 0 20px; text-align: right; }
+.newspaper-text-link { display: flex; align-items: center; justify-content: space-between; font: 9px 'DM Mono', monospace; text-transform: uppercase; letter-spacing: .1em; border-top: 1px solid #8d887b; padding-top: 13px; }
+.newspaper-paper { background-color: var(--paper); background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 180 180' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.8' numOctaves='3'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' opacity='.035' filter='url(%23n)'/%3E%3C/svg%3E"); color: var(--ink); border-top: 4px double #3d3d35; }
+.newspaper-latest { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.1fr); gap: 36px; padding: 28px 24px 30px; }
+.newspaper-section-head { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; margin-bottom: 0; padding-bottom: 11px; border-bottom: 1px solid #8d887b; }
+.newspaper-section-head h2 { font: 500 15px/1.3 var(--editorial); text-transform: uppercase; letter-spacing: .2em; margin: 0; }
+.newspaper-section-head a { font: 8px 'DM Mono', monospace; letter-spacing: .1em; text-transform: uppercase; white-space: nowrap; }
+.newspaper-fragment-list { list-style: none; padding: 0; margin: 0; }
+.newspaper-fragment-list li { border-bottom: 1px solid #a29b8d; }
+.newspaper-fragment-list li > a { display: grid; grid-template-columns: 32px minmax(0, 1fr) 88px; gap: 16px; align-items: start; padding: 17px 0; }
+.newspaper-fragment-number { font: 20px/1.2 var(--editorial); padding-top: 2px; }
+.newspaper-fragment-list h3 { font: 400 28px/1.02 var(--editorial); letter-spacing: -.015em; margin: 0; overflow-wrap: anywhere; }
+.newspaper-fragment-list p { font: 10px/1.6 'DM Mono', monospace; margin: 10px 0 0; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; overflow: hidden; }
+.newspaper-fragment-list time { font: 7px/1.7 'DM Mono', monospace; letter-spacing: .07em; text-transform: uppercase; text-align: right; padding-top: 6px; }
+.newspaper-fragment-list time span { display: block; margin-top: 10px; color: var(--oxblood); font-size: 13px; }
+.newspaper-fragment-list a:hover h3, .newspaper-section-head a:hover, .newspaper-text-link:hover { color: var(--oxblood); }
+.newspaper-frames { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 4px; padding: 4px; background: #171814; margin-top: 16px; }
+.newspaper-frame { min-width: 0; position: relative; background: #24251f; padding: 10px 3px 0; overflow: hidden; }
+.newspaper-film-edge { display: block; position: absolute; inset: 2px 4px auto; height: 3px; background: repeating-linear-gradient(90deg, #8b7650 0 5px, transparent 5px 17px); opacity: .65; }
+.newspaper-frame img { display: block; width: 100%; aspect-ratio: .56; object-fit: cover; filter: grayscale(1) contrast(1.05); transition: filter .5s; }
+.newspaper-frame:hover img { filter: grayscale(0); }
+.newspaper-frame-number { display: flex; justify-content: space-between; padding: 8px 5px; color: #b6a57b; font: 7px 'DM Mono', monospace; letter-spacing: .15em; }
+.newspaper-contact-caption { margin: 10px 0 0; font: italic 20px var(--editorial); }
+.newspaper-contact-caption span { float: right; padding-top: 4px; font: 8px 'DM Mono', monospace; text-transform: uppercase; letter-spacing: .1em; }
+.newspaper-status { padding: 24px 0; min-height: 150px; font: 16px/1.6 var(--editorial); }
+.newspaper-status button, .newspaper-contact-empty button { background: none; border: 0; border-bottom: 1px solid; padding: 4px 0; font-size: 12px; }
+.newspaper-contact-empty { min-height: 240px; margin-top: 16px; padding: 35px; border: 1px solid #a29b8d; display: grid; align-content: center; justify-items: center; text-align: center; font: 18px var(--editorial); }
+.newspaper-contact-empty > span { font: 50px var(--editorial); color: var(--oxblood); }
+.newspaper-about { display: grid; grid-template-columns: 1fr 1.6fr; gap: 60px; border-top: 4px double #5b5a50; padding: 42px 30px 46px; }
+.newspaper-about h2 { font: 400 clamp(38px, 4.4vw, 68px)/.95 var(--editorial); letter-spacing: -.035em; margin: 30px 0 0; }
+.newspaper-about h2 em { color: var(--oxblood); }
+.newspaper-about-lead { font: 400 31px/1.1 var(--editorial); margin: 0 0 24px; }
+.newspaper-about-columns { columns: 2; column-gap: 32px; font: 17px/1.5 var(--editorial); }
+.newspaper-about-columns p { margin: 0 0 15px; }
+.newspaper-footer { display: grid; grid-template-columns: 1fr 1.2fr; align-items: center; gap: 25px 50px; margin: 0 30px; border-top: 1px solid #5b5a50; padding: 30px 0 16px; }
+.newspaper-footer h2 { font: 400 37px/1 var(--editorial); letter-spacing: -.025em; margin: 18px 0; }
+.newspaper-footer > div > p:not(.newspaper-label) { font: 12px/1.6 'DM Mono', monospace; max-width: 370px; }
+.newspaper-footer .elsewhere-links { justify-content: end; flex-wrap: wrap; margin: 0; }
+.newspaper-colophon { grid-column: 1/-1; display: flex; justify-content: space-between; gap: 20px; border-top: 1px solid #8d887b; padding-top: 18px; font: 8px/1.5 'DM Mono', monospace; text-transform: uppercase; letter-spacing: .12em; }
+.newspaper-bottom-colophon { margin: 0 30px; padding-bottom: 20px; }
+@media (min-width: 1101px) {
+  .global-header.newspaper-header > .primary-nav { display: flex !important; }
+  .global-header.newspaper-header > .portrait-primary-nav { display: none !important; }
+}
+@media (max-width: 1100px) {
+  .global-header.newspaper-header { display: grid !important; grid-template-columns: 1fr auto !important; grid-template-rows: 66px auto !important; height: auto !important; gap: 0; }
+  .global-header.newspaper-header > .primary-nav { display: none !important; }
+  .global-header.newspaper-header > .portrait-primary-nav { display: flex !important; justify-content: space-between; grid-column: 1/-1; grid-row: 2; width: 100% !important; margin: 0 !important; padding: 0 0 12px !important; gap: 16px !important; border-top: 1px solid #aaa39550; }
+  .global-header.newspaper-header > .portrait-primary-nav button { display: block !important; font: italic 16px/1.2 'Cormorant Garamond', Georgia, serif !important; padding: 12px 0 0 !important; letter-spacing: .03em !important; }
+  .newspaper-header .header-actions { grid-column: 2; grid-row: 1; }
+  .newspaper-masthead { grid-template-columns: minmax(0, 1fr) 90px; gap: 20px; padding-top: 24px; }
+  .newspaper-masthead-note { display: none; }
+  .newspaper-edition { font-size: 10px; }
+  .newspaper-feature { grid-template-columns: minmax(0, 1fr) 240px; }
+  .newspaper-moon { padding: 22px; }
+  .newspaper-moon h2 { font-size: 88px; }
+  .newspaper-latest { gap: 25px; }
+  .newspaper-fragment-list li > a { grid-template-columns: 24px minmax(0, 1fr); gap: 10px; }
+  .newspaper-fragment-list time { grid-column: 2; text-align: left; padding: 0; }
+  .newspaper-fragment-list time span { display: inline; margin-left: 12px; }
+  .newspaper-fragment-list h3 { font-size: 25px; }
+  .newspaper-contact-caption span { float: none; display: block; margin-top: 5px; }
+  .newspaper-about { gap: 30px; }
+}
+@media (max-width: 700px) {
+  .newspaper-page, .global-header.newspaper-header { width: calc(100% - 28px); }
+  .newspaper-identity { gap: 15px; }
+  .newspaper-identity > span:last-child { font-size: 7px; letter-spacing: .15em; padding-left: 14px; }
+  .global-header.newspaper-header > .portrait-primary-nav { display: grid !important; grid-template-columns: repeat(3, 1fr); gap: 0 15px !important; padding-bottom: 12px !important; overflow: visible !important; }
+  .global-header.newspaper-header > .portrait-primary-nav button { font-size: 16px !important; min-height: 40px; padding: 10px 0 !important; }
+  .newspaper-masthead { grid-template-columns: 1fr; gap: 15px; padding: 24px 0 12px; }
+  .newspaper-edition { display: flex; justify-content: space-between; align-items: center; font-size: 8px; letter-spacing: .18em; padding: 0 2px; }
+  .newspaper-edition .newspaper-established { margin-bottom: 0; word-spacing: normal; }
+  .newspaper-edition span br { display: none; }
+  .newspaper-edition span { word-spacing: 6px; }
+  .newspaper-edition i { width: 58px; margin: 0; }
+  .newspaper-feature { grid-template-columns: 1fr; }
+  .newspaper-cover-link { min-height: 320px; aspect-ratio: 1.12; }
+  .newspaper-cover figcaption { padding: 13px 16px; gap: 8px; flex-direction: column; align-items: start; }
+  .newspaper-cover figcaption > span:last-child { text-align: left; }
+  .newspaper-moon { display: grid; grid-template-columns: 1fr 1fr; gap: 12px 20px; padding: 22px 20px; border-top: 1px solid #8d887b; }
+  .newspaper-moon > .newspaper-label { grid-column: 1/-1; padding-bottom: 14px; }
+  .newspaper-moon h2 { grid-column: 1; grid-row: 2/5; font-size: 70px; margin: 0; }
+  .newspaper-short-rule { display: none; }
+  .newspaper-moon-note { grid-column: 2; font-size: 20px; margin: 0; }
+  .newspaper-moon-bottom { grid-column: 2; padding-top: 0; }
+  .newspaper-moon-bottom p { font-size: 20px; text-align: left; margin: 0 0 16px; }
+  .newspaper-text-link { font-size: 7px; line-height: 1.5; gap: 7px; }
+  .newspaper-latest { grid-template-columns: 1fr; gap: 30px; padding: 24px 18px 30px; }
+  .newspaper-fragment-list li > a { padding: 17px 0; }
+  .newspaper-fragment-list h3 { font-size: 28px; }
+  .newspaper-fragment-list time { font-size: 8px; }
+  .newspaper-frame img { aspect-ratio: .48; }
+  .newspaper-contact-caption span { float: right; display: inline; margin: 0; font-size: 7px; }
+  .newspaper-about { grid-template-columns: 1fr; padding: 28px 20px; gap: 28px; }
+  .newspaper-about h2 { font-size: 48px; margin-top: 20px; }
+  .newspaper-about-lead { font-size: 26px; }
+  .newspaper-about-columns { columns: 1; font-size: 18px; }
+  .newspaper-footer { grid-template-columns: 1fr; margin: 0 20px; padding-top: 25px; gap: 20px; }
+  .newspaper-footer .elsewhere-links { justify-content: start; gap: 12px 20px; }
+  .newspaper-colophon { flex-wrap: wrap; font-size: 7px; gap: 12px; }
+  .newspaper-bottom-colophon { margin: 0 20px; }
+  .newspaper-colophon span:nth-child(2) { order: 3; width: 100%; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .newspaper-page *, .newspaper-header * { scroll-behavior: auto !important; animation: none !important; transition: none !important; }
+}
+
+/* The original entrance artwork is the sole brand wordmark, in every edition.
+   Object-fit crops only the transparent padding, never redraws the logo. */
+.newspaper-header .main-logo { display: flex !important; gap: 20px; }
+.newspaper-header .main-logo > img { position: static; display: block; width: 150px !important; height: 44px; object-fit: cover; object-position: center 48%; clip-path: none; overflow: visible; }
+.newspaper-header .newspaper-identity { gap: 0; }
+.newspaper-masthead .newspaper-logo-lockup { display: block; position: relative; width: 100%; aspect-ratio: 5.3; overflow: hidden; margin: 0; font-size: inherit; letter-spacing: normal; line-height: normal; }
+.newspaper-masthead .newspaper-original-logo { display: block; width: 100%; height: 100%; object-fit: cover; object-position: center 48%; }
+.newspaper-edition > span { display: block; max-width: 90px; }
+@media (min-width: 1101px) and (max-width: 1320px) { .newspaper-header .newspaper-identity { display: none; } }
+@media (max-width: 700px) {
+  .newspaper-header .main-logo { gap: 12px; }
+  .newspaper-header .main-logo > img { width: 125px !important; height: 37px; }
+  .newspaper-header .newspaper-identity > span { border-left: 0; padding-left: 0; font-size: 6px; letter-spacing: .07em; }
+  .newspaper-masthead .newspaper-logo-lockup { aspect-ratio: 5; }
+  .newspaper-edition > span { max-width: none; }
+}
+@media (max-width: 370px) { .newspaper-header .newspaper-identity { display: none; } }
+
+/* Keep the original expanding social buttons and their icon/label motion. */
+.newspaper-footer .elsewhere-links { margin: 0 !important; }
+.newspaper-footer .elsewhere-link { color: var(--ink); border-color: #8d887b; background: #e1d9ca; }
+.newspaper-footer .elsewhere-link:hover { color: var(--paper); background: var(--ink); }
+/* A partial contact sheet still fills its frame without invented images. */
+.newspaper-frames { grid-template-columns: repeat(var(--frame-count, 4), minmax(0, 1fr)); aspect-ratio: 2.5; }
+.newspaper-frame { display: grid; grid-template-rows: minmax(0, 1fr) auto; }
+.newspaper-frame img { height: 100%; min-height: 0; aspect-ratio: auto; }
+@media (max-width: 700px) { .newspaper-frames { aspect-ratio: 1.75; } }
+
+/* The small header mark is the crescent cut from the original brand artwork. */
+.main-logo .brand-moon { display: block; width: 39px; height: 46px; flex-shrink: 0; overflow: visible; }
+.global-header .main-logo:has(.brand-moon) { width: auto; min-width: 46px; }
+.newspaper-header .main-logo { gap: 20px; }
+.newspaper-header .newspaper-identity { display: flex; }
+.newspaper-header .newspaper-identity > span { border-left: 1px solid #999284; padding-left: 18px; }
+.newspaper-moon .newspaper-moon-note { max-width: 230px; font-size: 25px; line-height: 1.35; color: var(--oxblood); }
+.newspaper-moon-bottom { padding-top: 32px; }
+.newspaper-colophon { grid-template-columns: 1fr auto; }
+@keyframes newspaper-text-arrive {
+  from { opacity: 0; transform: translateY(24px); filter: blur(5px); }
+  to { opacity: 1; transform: translateY(0); filter: blur(0); }
+}
+.newspaper-section-paper .page-head > :is(h1, p, span) { animation: newspaper-text-arrive 1.65s cubic-bezier(.16,1,.3,1) both; }
+.newspaper-section-paper .page-head > p { animation-delay: .18s; }
+@media (max-width: 700px) {
+  .main-logo .brand-moon { width: 31px; height: 38px; }
+  .newspaper-header .newspaper-identity > span { font-size: 6px; padding-left: 12px; }
+  .newspaper-moon .newspaper-moon-note { max-width: none; font-size: 22px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .newspaper-reveal { opacity: 1 !important; transform: none !important; filter: none !important; }
+  .newspaper-section-paper .page-head > :is(h1, p, span) { animation: none; }
+}
+/* Keep the handwritten note in the lower-right margin of Dear Moon, not in
+   a banner above the photograph. The four lines remain legible on mobile. */
+.newspaper-moon-ink { margin-bottom: 16px; }
+@media (max-width: 700px) {
+  .newspaper-moon h2 { grid-row: 2; }
+  .newspaper-moon-bottom { grid-column: 1/-1; padding-top: 0; }
+  .newspaper-moon-ink { width: min(70%, 195px); margin-top: -8px; }
+}

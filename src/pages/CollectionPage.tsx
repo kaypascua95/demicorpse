@@ -7,6 +7,7 @@ import { entryTimestamp, errorMessage, listEntries, publicCms, type Collection, 
 import { SiteLink } from '@/lib/navigation';
 import { SqueezeCarousel, type SqueezeSlide } from '@/components/ui/carousel-squeeze';
 import Timeline06 from '@/components/ui/timeline-06';
+import { JournalEnding } from '@/components/JournalEnding';
 
 const copy = {
   journal: ['01 / JOURNAL', 'Things I wanted', 'to remember.', 'Longer thoughts, stories, and the things that refused to stay in my head.'],
@@ -15,7 +16,30 @@ const copy = {
   archive: ['ARCHIVE', 'Everything', 'kept.', 'A chronological record of whatever survived long enough to end up here.'],
 };
 function JournalSqueeze({entries}:{entries:Entry[]}) {
-  const slides:SqueezeSlide[]=entries.slice(0,7).map(entry=>({id:entry.id,title:entry.title,description:entry.excerpt||entry.quote||'Open the journal entry.',href:`/journal/${entry.slug}`,action:'Read entry',overlay:<span>{entryTimestamp(entry)}</span>,image:undefined}));
+  const [covers, setCovers] = useState<{ entries: Entry[]; urls: Record<string, string> }>({ entries, urls: {} });
+  useEffect(() => {
+    let active = true;
+    const objectUrls: string[] = [];
+    setCovers({ entries, urls: {} });
+    const paths = new Set(entries.slice(0, 7).flatMap(entry => entry.cover_image ? [entry.cover_image] : []));
+    paths.forEach(path => {
+      publicCms?.storage.from('cms-media').download(path).then(({ data, error }) => {
+        if (!active || error || !data) return;
+        const url = URL.createObjectURL(data);
+        objectUrls.push(url);
+        setCovers(current => active && current.entries === entries
+          ? { entries, urls: { ...current.urls, [path]: url } }
+          : current);
+      }).catch(() => { /* Keep the text-only panel when a cover is unavailable. */ });
+    });
+    return () => {
+      active = false;
+      objectUrls.forEach(url => URL.revokeObjectURL(url));
+    };
+  }, [entries]);
+  // Do not flash an old cover between a new entry list rendering and its effect.
+  const images = covers.entries === entries ? covers.urls : {};
+  const slides:SqueezeSlide[]=entries.slice(0,7).map(entry=>({id:entry.id,title:entry.title,description:entry.excerpt||entry.quote||'Open the journal entry.',href:`/journal/${entry.slug}`,action:'Read entry',overlay:<span>{entryTimestamp(entry)}</span>,image:entry.cover_image?images[entry.cover_image]:undefined,imageAlt:entry.title}));
   return <section className="journal-featured"><p className="cms-eyebrow">FROM THE JOURNAL</p><SqueezeCarousel slides={slides} label="Journal entries"/></section>;
 }
 export default function CollectionPage({ collection, slug }: { collection: Collection; slug?: string }) {
@@ -25,7 +49,11 @@ export default function CollectionPage({ collection, slug }: { collection: Colle
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [retry, setRetry] = useState(0);
+  const [loadedKey, setLoadedKey] = useState('');
+  const loadKey = JSON.stringify([collection, slug, page, retry]);
   const [indexView,setIndexView]=useState<'featured'|'chronological'>('featured');
+  const detailClass = slug && (collection === 'journal' || collection === 'fragments')
+    ? 'inner-page newspaper-entry-page' : 'inner-page';
   useEffect(() => {
     let active = true;
     setLoading(true); setError('');
@@ -41,13 +69,13 @@ export default function CollectionPage({ collection, slug }: { collection: Colle
     };
     fetchData().then(data => { if (active) { setEntries(data); setMore(!slug && data.length === 20); } })
       .catch(error => { if (active) setError(errorMessage(error)); })
-      .finally(() => { if (active) setLoading(false); });
+      .finally(() => { if (active) { setLoading(false); setLoadedKey(loadKey); } });
     return () => { active = false; };
-  }, [collection, slug, page, retry]);
-  if (loading) return <main className="inner-page"><p role="status" className="cms-muted">Opening the archive…</p></main>;
-  if (error) return <main className="inner-page"><p role="alert">The archive couldn’t be loaded.</p><button className="cms-button" onClick={() => setRetry(retry + 1)}>Try again</button></main>;
-  if (slug) return <main className="inner-page"><SiteLink className="cms-back" href={`/${collection}/`}>← {collection}</SiteLink>
-    {entries[0] ? <><EntryView entry={entries[0]} />{collection === 'fragments' && <TraceSection fragmentId={entries[0].id} />}</> : <div className="cms-entry"><h1>Nothing here.</h1><p>This entry isn’t available.</p></div>}</main>;
+  }, [collection, slug, page, retry, loadKey]);
+  if (loading || loadedKey !== loadKey) return <main className={detailClass}><p role="status" className="cms-muted">Opening the archive…</p></main>;
+  if (error) return <main className={detailClass}><p role="alert">The archive couldn’t be loaded.</p><button className="cms-button" onClick={() => setRetry(retry + 1)}>Try again</button></main>;
+  if (slug) return <main className={detailClass}><SiteLink className="cms-back" href={`/${collection}/`}>← {collection}</SiteLink>
+    {entries[0] ? <><EntryView entry={entries[0]} />{collection === 'journal' && <JournalEnding key={entries[0].id} entry={entries[0]} />}{collection === 'fragments' && <TraceSection fragmentId={entries[0].id} />}</> : <div className="cms-entry newspaper-entry-empty"><h1>Nothing here.</h1><p>This entry isn’t available.</p></div>}</main>;
   if (!entries.length && page === 0 && collection !== 'fragments') return <ComingSoon page={collection} />;
   const [label, first, second, note] = copy[collection];
   return <main className="inner-page"><header className="page-head"><span>{label}</span><h1>{first}<br /><em>{second}</em></h1><p>{note}</p></header>

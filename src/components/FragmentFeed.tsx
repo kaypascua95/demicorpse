@@ -29,6 +29,6 @@ export default function FragmentFeed({entries}:{entries:Entry[]}) {
       </Marquee>
     </div>
     <div className="fragment-marquee-fade fragment-marquee-fade-top"/><div className="fragment-marquee-fade fragment-marquee-fade-bottom"/>
-    </section>}{lightbox&&<div className="fragment-lightbox" role="dialog" aria-modal="true" onClick={()=>setLightbox(null)}><button aria-label="Close image">×</button><div onClick={e=>e.stopPropagation()}><Media path={lightbox}/></div></div>}
+    </section>}{lightbox&&<div className="fragment-lightbox newspaper-fragment-lightbox" role="dialog" aria-modal="true" aria-label="Fragment image" onClick={()=>setLightbox(null)}><button aria-label="Close image">×</button><div onClick={e=>e.stopPropagation()}><Media path={lightbox}/></div></div>}
   </section>;
 }

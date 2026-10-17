@@ -35,7 +35,9 @@ export function Markdown({ content }: { content: string }) {
 
 export function EntryView({ entry, preview = false }: { entry: EntryInput | Entry; preview?: boolean }) {
   const timestamp = 'created_at' in entry ? entryTimestamp(entry) : null;
-  return <article className="cms-entry">
+  const readingClass = entry.collection === 'journal' || entry.collection === 'fragments'
+    ? ` newspaper-reading-entry newspaper-reading-entry--${entry.collection}` : '';
+  return <article className={`cms-entry${readingClass}`}>
     <header><p className="cms-eyebrow">{entry.collection} / <time dateTime={timestamp && "created_at" in entry ? (entry.published_at || entry.created_at) : entry.date}>{timestamp || entry.date}</time></p>
       {entry.title && <h1>{entry.title}</h1>}
       {entry.game && <p className="cms-muted">{entry.game}{entry.duration ? ` · ${entry.duration}` : ''}</p>}

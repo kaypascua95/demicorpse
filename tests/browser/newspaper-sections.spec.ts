@@ -394,15 +394,18 @@ test('LIKAS retains its external project button and section masthead returns hom
   await expectBrandMoon(page);
 });
 
-test('detail and admin routes keep their existing surfaces outside the landing wrapper', async ({ page }) => {
+test('detail and admin routes share the newspaper design without duplicating mastheads', async ({ page }) => {
   await page.goto(`/journal/${journal[0].slug}`);
   await expect(page.locator('.cms-entry')).toContainText(journal[0].content);
-  await expect(page.locator('.newspaper-section-shell')).toHaveCount(0);
-  await expect(page.locator('.newspaper-masthead')).toHaveCount(0);
+  await expect(page.locator('.newspaper-section-shell')).toHaveCount(1);
+  await expect(page.locator('.newspaper-entry-page')).toHaveCount(1);
+  await expect(page.locator('.newspaper-masthead')).toHaveCount(1);
   await expectBrandMoon(page);
   await page.goto('/admin');
   await expect(page.getByLabel('Email', { exact: true })).toBeVisible();
   await expect(page.getByLabel('Password', { exact: true })).toBeVisible();
+  await expect(page.locator('.newspaper-admin')).toHaveCount(1);
+  await expect(page.locator('.newspaper-header')).toHaveCount(1);
   await expect(page.locator('.newspaper-section-shell')).toHaveCount(0);
   await expect(page.locator('.newspaper-masthead')).toHaveCount(0);
   await expectBrandMoon(page);

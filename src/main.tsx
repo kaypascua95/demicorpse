@@ -4,3 +4,6 @@ import "./cms.css";
 import "./newspaper.css";
 
 import "./newspaper-sections.css";
+
+import "./newspaper-entry.css";
+import "./newspaper-admin.css";

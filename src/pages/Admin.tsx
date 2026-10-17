@@ -131,7 +131,7 @@ export default function Admin() {
       : <input type={name === 'date' ? 'date' : 'text'} required={name === 'date' || name === 'slug'} maxLength={maxLength} value={String(draft?.[name] ?? '')} onChange={e => change(name, e.target.value)} />}
   </label>;
 
-  return <main className="inner-page cms-admin"><header className="cms-heading"><div><p className="cms-eyebrow">DEMICORPSE / PRIVATE</p><h1>Archive <em>control.</em></h1><p className="cms-muted">A place for the things you want to keep.</p></div>
+  return <main id="newspaper" className="inner-page cms-admin newspaper-admin" tabIndex={-1}><header className="cms-heading"><div><p className="cms-eyebrow">DEMICORPSE / PRIVATE</p><h1>Archive <em>control.</em></h1><p className="cms-muted">A place for the things you want to keep.</p></div>
     {access === 'owner' && <button className="cms-button" disabled={busy} onClick={() => {
       if (dirty && !window.confirm('Sign out and discard unsaved changes?')) return;
       void run(async () => { const { error } = await client().auth.signOut(); if (error) throw error; });

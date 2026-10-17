@@ -88,13 +88,18 @@ async function expectSectionLayout(page: Page) {
 async function attachFixtureScreenshot(page: Page, testInfo: TestInfo, section: string) {
   // Record the normal top-of-page view, not a keyboard-focused control or a
   // sticky header stranded at the scroll position of the interaction above.
+  // Fonts can change layout and trigger scroll anchoring. Settle them before
+  // positioning the capture, rather than allowing them to move it afterward.
+  await page.evaluate(async () => {
+    await document.fonts.ready;
+    await new Promise<void>(resolve => requestAnimationFrame(() => requestAnimationFrame(() => resolve())));
+  });
   await page.mouse.move(0, 0);
   await page.evaluate(() => {
     if (document.activeElement instanceof HTMLElement) document.activeElement.blur();
     window.scrollTo({ left: 0, top: 0, behavior: 'instant' });
   });
   await expect.poll(() => page.evaluate(() => window.scrollY)).toBe(0);
-  await page.evaluate(async () => { await document.fonts.ready; });
 
   if (section === 'gallery') {
     await expect(page.locator('.gallery-layout-modal')).toHaveCount(0);

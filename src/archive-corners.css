@@ -1,4 +1,4 @@
-/* Home-only margin notes. No embedded players, remote artwork or animation. */
+/* Home-only margin notes. Spotify loads only on request; no decorative motion. */
 .newspaper-page .archive-corners {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -45,6 +45,12 @@
 .newspaper-page .archive-corner-action:disabled { cursor: not-allowed; color: #4c4c42; opacity: 1; }
 .newspaper-page a.archive-corner-action:hover { text-decoration: underline; text-underline-offset: 4px; }
 .newspaper-page a.archive-corner-action:focus-visible { outline: 2px solid #722b2a; outline-offset: 4px; }
+.archive-listening-player { margin: 0 0 16px; }
+.archive-player-note { margin: 0 0 12px; color: #4c4c42; font: 11px/1.65 'DM Mono', monospace; }
+.newspaper-page .archive-player-toggle { min-height: 44px; max-width: 100%; padding: 10px 14px; border: 1px solid #722b2a; background: transparent; color: #722b2a; font: 11px/1.6 'DM Mono', monospace; text-align: left; }
+.newspaper-page .archive-player-toggle:hover { background: #e1d9ca; }
+.newspaper-page .archive-player-toggle:focus-visible { outline: 2px solid #722b2a; outline-offset: 4px; }
+.archive-spotify-frame { display: block; width: 100%; max-width: 100%; height: 352px; margin: 16px 0 12px; border: 0; border-radius: 12px; background: #171814; }
 .archive-corner-sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0; }
 @media (max-width: 700px) {
   .newspaper-page .archive-corners { grid-template-columns: 1fr; gap: 24px; margin: 10px 20px 0; padding: 24px 0; }

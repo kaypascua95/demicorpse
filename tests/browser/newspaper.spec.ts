@@ -1,5 +1,5 @@
 import { expect, test, type Page } from '@playwright/test';
-import { parseSupportProfileUrl, parseSpotifyPlaylistUrl } from '../../src/lib/archive-links';
+import { archiveLinks, parseSupportProfileUrl, parseSpotifyPlaylistUrl } from '../../src/lib/archive-links';
 
 const fragment = {
   id: '11111111-1111-4111-8111-111111111111',
@@ -44,6 +44,8 @@ const dearMoonCopy = 'A collection of prose and poetry, coming soon.';
 test('archive widget configuration accepts only supported official HTTPS destinations', () => {
   expect(parseSupportProfileUrl('https://ko-fi.com/examplecreator')).toBe('https://ko-fi.com/examplecreator');
   expect(parseSupportProfileUrl('https://www.buymeacoffee.com/examplecreator')).toBe('https://buymeacoffee.com/examplecreator');
+  expect(archiveLinks.supportUrl).toBe('https://ko-fi.com/demic0rpse');
+  expect(archiveLinks.spotifyPlaylistUrl).toBe('https://open.spotify.com/playlist/5hXIZZcqf438PiHmjDfMHI');
   const playlist = 'https://open.spotify.com/playlist/0123456789ABCDEFGHIJKL';
   expect(parseSpotifyPlaylistUrl(playlist)).toBe(playlist);
   expect(parseSpotifyPlaylistUrl(`${playlist}?si=shared-token`)).toBe(playlist);
@@ -55,7 +57,7 @@ test('archive widget configuration accepts only supported official HTTPS destina
   }
 });
 
-test('support and listening previews are honest, inactive, and do not contact providers', async ({ page }, testInfo) => {
+test('approved Ko-fi and Spotify destinations stay private until visitor interaction', async ({ page }, testInfo) => {
   const providerRequests: string[] = [];
   page.on('request', request => {
     if (/spotify|ko-fi|buymeacoffee/i.test(new URL(request.url()).hostname)) providerRequests.push(request.url());
@@ -67,24 +69,112 @@ test('support and listening previews are honest, inactive, and do not contact pr
   await widgets.scrollIntoViewIfNeeded();
   await expect(widgets.getByRole('heading', { name: 'Support the archive', exact: true })).toBeVisible();
   await expect(widgets.getByRole('heading', { name: 'Listening corner', exact: true })).toBeVisible();
-  await expect(widgets.getByText('Preview', { exact: true })).toHaveCount(2);
-  await expect(widgets.getByRole('button', { name: 'Support link coming soon', exact: true })).toBeDisabled();
-  await expect(widgets.getByRole('button', { name: 'Playlist not connected', exact: true })).toBeDisabled();
-  await expect(widgets.locator('a, iframe, audio')).toHaveCount(0);
+  await expect(widgets.getByText('Preview', { exact: true })).toHaveCount(0);
+  await expect(widgets.getByText('femme fatale', { exact: true })).toBeVisible();
+  const support = widgets.getByRole('link', { name: /Support on Ko-fi/ });
+  await expect(support).toHaveAttribute('href', 'https://ko-fi.com/demic0rpse');
+  await expect(support).toHaveAttribute('target', '_blank');
+  await expect(support).toHaveAttribute('rel', 'noopener noreferrer');
+  await expect(widgets.getByRole('button', { name: 'Support link coming soon', exact: true })).toHaveCount(0);
+  await expect(widgets.getByRole('button', { name: 'Load Spotify player', exact: true })).toBeEnabled();
+  await expect(widgets.locator('iframe, audio')).toHaveCount(0);
+  await expect(widgets.getByRole('link', { name: /Open in Spotify/ })).toHaveAttribute('href', 'https://open.spotify.com/playlist/5hXIZZcqf438PiHmjDfMHI');
+  await expect(widgets).toContainText('Loading connects to Spotify and may use cookies.');
   await expectNoHorizontalOverflow(page);
-  expect(await widgets.evaluate(element => [...element.querySelectorAll('button')].every(button => {
+  expect(await widgets.evaluate(element => [...element.querySelectorAll('button, .archive-corner-action')].every(button => {
     const bounds = button.getBoundingClientRect();
     const card = button.closest('article')!.getBoundingClientRect();
     return bounds.height >= 44 && bounds.left >= card.left - 1 && bounds.right <= card.right + 1;
   }))).toBe(true);
-  const path = testInfo.outputPath(`newspaper-widget-previews-${testInfo.project.name}.png`);
+  const path = testInfo.outputPath(`newspaper-kofi-spotify-${testInfo.project.name}.png`);
   await widgets.screenshot({ path });
-  await testInfo.attach(`Support and listening ${testInfo.project.name} (inactive previews; no connected accounts)`, { path, contentType: 'image/png' });
+  await testInfo.attach(`DemiCorpse Ko-fi and femme fatale ${testInfo.project.name} (Spotify player not yet loaded)`, { path, contentType: 'image/png' });
   await page.getByRole('button', { name: 'JOURNAL', exact: true }).click();
   await expect(widgets).toHaveCount(0);
   await page.getByRole('button', { name: 'DemiCorpse home', exact: true }).click();
-  await expect(widgets.getByRole('button', { name: 'Playlist not connected', exact: true })).toBeDisabled();
+  await expect(widgets.getByRole('button', { name: 'Load Spotify player', exact: true })).toBeEnabled();
   expect(providerRequests).toEqual([]);
+});
+
+
+test('Spotify is click-to-load with safe permissions and a usable fallback when the provider fails', async ({ page }) => {
+  const embedUrl = 'https://open.spotify.com/embed/playlist/5hXIZZcqf438PiHmjDfMHI';
+  const requests: string[] = [];
+  let unavailable = true;
+  await page.route('https://open.spotify.com/**', async route => {
+    requests.push(route.request().url());
+    if (unavailable) await route.abort('failed');
+    else await route.fulfill({ status: 503, contentType: 'text/html', body: '<!doctype html><html><body><h1>Fixture provider unavailable</h1></body></html>' });
+  });
+  await mockCms(page);
+  await page.goto('/?enter=1');
+  const widgets = page.getByRole('region', { name: 'Support and listening', exact: true });
+  const load = widgets.getByRole('button', { name: 'Load Spotify player', exact: true });
+  const fallback = widgets.getByRole('link', { name: /Open in Spotify/ });
+  await widgets.scrollIntoViewIfNeeded();
+  await expect(load).toBeVisible();
+  expect(requests).toEqual([]);
+  await load.focus();
+  await page.keyboard.press('Enter');
+  const iframe = widgets.locator('iframe');
+  await expect(iframe).toHaveAttribute('src', embedUrl);
+  await expect(iframe).toHaveAttribute('title', 'femme fatale Spotify playlist');
+  await expect(iframe).toHaveAttribute('loading', 'lazy');
+  await expect(iframe).toHaveAttribute('referrerpolicy', 'strict-origin-when-cross-origin');
+  await expect(iframe).toHaveAttribute('allow', 'encrypted-media; fullscreen; picture-in-picture');
+  await expect.poll(() => requests.length).toBe(1);
+  await expect(fallback).toBeVisible();
+  await expect(fallback).toHaveAttribute('href', 'https://open.spotify.com/playlist/5hXIZZcqf438PiHmjDfMHI');
+  await expect(fallback).toHaveAttribute('rel', 'noopener noreferrer');
+  await expect(widgets).toContainText('If the player is unavailable, open the playlist in Spotify below.');
+  const hide = widgets.getByRole('button', { name: 'Hide Spotify player', exact: true });
+  await expect(hide).toBeFocused();
+  await page.keyboard.press('Enter');
+  await expect(iframe).toHaveCount(0);
+  await expect(load).toBeFocused();
+  unavailable = false;
+  await page.keyboard.press('Enter');
+  await expect(widgets.frameLocator('iframe').getByRole('heading', { name: 'Fixture provider unavailable' })).toBeVisible();
+  await expect(fallback).toBeVisible();
+  await expectNoHorizontalOverflow(page);
+  expect(requests).toEqual([embedUrl, embedUrl]);
+  // Leaving an open or failed player must remove it, not keep background audio.
+  await page.getByRole('button', { name: 'JOURNAL', exact: true }).click();
+  await expect(page.locator('.archive-spotify-frame')).toHaveCount(0);
+  await page.getByRole('button', { name: 'DemiCorpse home', exact: true }).click();
+  await expect(load).toBeVisible();
+  await expect(iframe).toHaveCount(0);
+  expect(requests).toEqual([embedUrl, embedUrl]);
+});
+
+test('Ko-fi opens the exact approved profile in a separate tab and closing it preserves the archive', async ({ page, context }) => {
+  const destinations: string[] = [];
+  await context.route('https://ko-fi.com/**', async route => {
+    destinations.push(route.request().url());
+    await route.fulfill({ contentType: 'text/html', body: '<!doctype html><html><head><title>Destination fixture</title></head><body><h1>Ko-fi destination fixture</h1><p>No payment service is contacted in this test.</p></body></html>' });
+  });
+  await mockCms(page);
+  await page.goto('/?enter=1');
+  const support = page.getByRole('region', { name: 'Support and listening', exact: true }).getByRole('link', { name: /Support on Ko-fi/ });
+  await support.scrollIntoViewIfNeeded();
+  expect(destinations).toEqual([]);
+  for (let attempt = 0; attempt < 2; attempt++) {
+    await support.focus();
+    await expect(support).toBeFocused();
+    const opened = page.waitForEvent('popup');
+    await page.keyboard.press('Enter');
+    const popup = await opened;
+    await expect(popup).toHaveURL('https://ko-fi.com/demic0rpse');
+    await expect(popup.getByRole('heading', { name: 'Ko-fi destination fixture' })).toBeVisible();
+    expect(await popup.evaluate(() => window.opener)).toBeNull();
+    await popup.close();
+    await page.bringToFront();
+    await expect(page).toHaveURL(/\/\?enter=1$/);
+    await expectNewspaper(page);
+    await expect(support).toBeFocused();
+  }
+  expect(destinations).toEqual(['https://ko-fi.com/demic0rpse', 'https://ko-fi.com/demic0rpse']);
+  await expect(page.getByRole('button', { name: 'Load Spotify player', exact: true })).toBeEnabled();
 });
 
 type CmsState = 'content' | 'empty' | 'error';

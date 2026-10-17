@@ -1,17 +1,19 @@
 /**
  * Public, optional home-page destinations. Replace null only with the owner's
  * real Ko-fi / Buy Me a Coffee profile or Spotify playlist URL. No credentials,
- * checkout URLs, embeds or environment variables belong here. Until configured,
- * the cards stay visibly marked as previews and make no third-party requests.
+ * checkout URLs, iframe markup or environment variables belong here. Missing
+ * links remain previews. The Spotify player contacts Spotify only after a click.
  */
 export type ArchiveLinks = Readonly<{
   supportUrl: string | null;
   spotifyPlaylistUrl: string | null;
+  playlistTitle: string | null;
 }>;
 
 export const archiveLinks: ArchiveLinks = {
-  supportUrl: null,
-  spotifyPlaylistUrl: null,
+  supportUrl: 'https://ko-fi.com/demic0rpse',
+  spotifyPlaylistUrl: 'https://open.spotify.com/playlist/5hXIZZcqf438PiHmjDfMHI',
+  playlistTitle: 'femme fatale',
 };
 
 function publicHttpsUrl(value: string | null | undefined): URL | null {

@@ -1,4 +1,4 @@
-import { useEffect, useState, type RefObject } from 'react';
+import { useEffect, useRef, useState, type RefObject } from 'react';
 import { motion, useMotionValueEvent, useScroll, useTransform } from 'framer-motion';
 import { cn } from '@/lib/utils';
 import { SiteLink } from '@/lib/navigation';
@@ -25,6 +25,7 @@ export function Skiper89({
   targetRef, bookmark, hasLastRead,
   onSaveBookmark, onResumeBookmark, onResumeLatest, onRemoveBookmark,
 }: Skiper89Props) {
+  const root = useRef<HTMLElement>(null);
   const [open, setOpen] = useState(false);
   const [progressPercent, setProgressPercent] = useState(0);
   const { scrollYProgress } = useScroll({ target: targetRef, offset: ['start start', 'end end'] });
@@ -34,8 +35,22 @@ export function Skiper89({
   useMotionValueEvent(percentage, 'change', value => setProgressPercent(value));
   useEffect(() => { setProgressPercent(percentage.get()); }, [percentage]);
 
+  useEffect(() => {
+    if (!open) return;
+    const onKey = (event: KeyboardEvent) => { if (event.key === 'Escape') setOpen(false); };
+    const onOutside = (event: PointerEvent) => {
+      if (root.current && !root.current.contains(event.target as Node)) setOpen(false);
+    };
+    window.addEventListener('keydown', onKey);
+    window.addEventListener('pointerdown', onOutside);
+    return () => {
+      window.removeEventListener('keydown', onKey);
+      window.removeEventListener('pointerdown', onOutside);
+    };
+  }, [open]);
+
   const svgRadius = 18;
-  return <aside className="unmaking-progress-widget" aria-label="Chapter reading progress and bookmarks">
+  return <aside ref={root} className="unmaking-progress-widget" aria-label="Chapter reading progress and bookmarks">
     <div className={cn('unmaking-progress-popup', open && 'is-open')} id="unmaking-progress-options" hidden={!open}>
       <span className="unmaking-progress-eyebrow">CHAPTER I / YOUR PLACE</span>
       <p className="unmaking-progress-heading">Your reading place.</p>

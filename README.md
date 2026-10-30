@@ -66,3 +66,15 @@ The hero uses Peter Herrmann's photograph from Unsplash, served via
 textures fall back to a regular image on unsupported devices, and the entire
 reveal becomes static when reduced motion is preferred. No Lenis instance or
 extra npm dependency is installed.
+
+### October 2026 preview revision
+
+The main site's top-level LIKAS link is replaced with The Unmaking; LIKAS is
+still available under the More menu. The novella entrance starts as a blank
+black stage with an animated, keyboard-activatable **Scroll to Reveal** cue.
+The branded novella header stays hidden until the scene has developed.
+The byline and actions now read **a novella by DemiCorpse**, **Begin Reading**,
+and **Chapter Index**. The index includes an original self-contained SVG cover
+at `public/the-unmaking-cover.svg`; this is a cover **study**, not a finalized
+print-ready paperback wrap. Reduced-motion visitors see the complete scene
+and working navigation immediately.

@@ -57,9 +57,10 @@ const FRAGMENT = [
 interface InkHeroProps {
   imageSrc: string;
   imageAlt: string;
+  onRevealChange?: (revealed: boolean) => void;
 }
 
-export default function InkHero({ imageSrc, imageAlt }: InkHeroProps) {
+export default function InkHero({ imageSrc, imageAlt, onRevealChange }: InkHeroProps) {
   const root = useRef<HTMLElement>(null);
   const stage = useRef<HTMLDivElement>(null);
   const canvas = useRef<HTMLCanvasElement>(null);
@@ -84,6 +85,8 @@ export default function InkHero({ imageSrc, imageAlt }: InkHeroProps) {
 
     gsap.registerPlugin(ScrollTrigger);
     let current = reduced ? 1 : 0;
+    let developed = reduced ? 1 : 0;
+    let lastHeaderVisible: boolean | null = null;
     let pointer: [number, number] = [-100, -100];
     let pointerRadius = 0;
     let image: HTMLImageElement | null = null;
@@ -156,7 +159,7 @@ export default function InkHero({ imageSrc, imageAlt }: InkHeroProps) {
       const coverY = canvasAspect > imageAspect ? imageAspect / canvasAspect : 1;
       gl.uniform2f(gl.getUniformLocation(program, 'uCover'), coverX, coverY);
       gl.uniform1f(gl.getUniformLocation(program, 'uAspect'), canvasAspect);
-      gl.uniform1f(gl.getUniformLocation(program, 'uProgress'), current);
+      gl.uniform1f(gl.getUniformLocation(program, 'uProgress'), developed);
       gl.uniform2f(gl.getUniformLocation(program, 'uPointer'), pointer[0], pointer[1]);
       gl.uniform1f(gl.getUniformLocation(program, 'uPointerRadius'), pointerRadius);
       gl.clearColor(0, 0, 0, 0);
@@ -164,13 +167,25 @@ export default function InkHero({ imageSrc, imageAlt }: InkHeroProps) {
       gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
     };
 
+    const clamp = (value: number) => Math.min(1, Math.max(0, value));
     const paint = (value: number) => {
-      current = reduced ? 1 : Math.max(0, Math.min(1, value));
-      element.style.setProperty('--ink-progress', String(current));
-      element.style.setProperty('--ink-scrim', String(Math.max(0, (current - .18) * 1.36)));
-      element.style.setProperty('--ink-copy', String(Math.max(0, Math.min(1, (current - .05) * 4))));
-      element.style.setProperty('--ink-cta', String(Math.max(0, Math.min(1, (current - .43) * 3.4))));
-      element.dataset.inkStation = current > .52 ? 'print' : 'paper';
+      current = reduced ? 1 : clamp(value);
+      // A genuinely empty opening gives way to ink, then to text and navigation.
+      developed = clamp((current - .12) / .72);
+      const copy = clamp((current - .52) / .20);
+      const actions = clamp((current - .72) / .16);
+      const cue = 1 - clamp((current - .02) / .19);
+      element.style.setProperty('--ink-progress', String(developed));
+      element.style.setProperty('--ink-scrim', String(clamp((current - .34) / .43)));
+      element.style.setProperty('--ink-copy', String(copy));
+      element.style.setProperty('--ink-cta', String(actions));
+      element.style.setProperty('--ink-cue', String(cue));
+      element.dataset.inkStation = current < .22 ? 'paper' : current < .72 ? 'wash' : 'print';
+      const showHeader = reduced || current >= .74;
+      if (showHeader !== lastHeaderVisible) {
+        lastHeaderVisible = showHeader;
+        onRevealChange?.(showHeader);
+      }
       draw();
     };
 
@@ -212,7 +227,7 @@ export default function InkHero({ imageSrc, imageAlt }: InkHeroProps) {
     const observer = new ResizeObserver(onResize);
     observer.observe(surface);
     const onMove = (event: PointerEvent) => {
-      if (reduced || !window.matchMedia('(pointer: fine)').matches) return;
+      if (reduced || current < .12 || !window.matchMedia('(pointer: fine)').matches) return;
       const r = surface.getBoundingClientRect();
       pointer = [(event.clientX - r.left) / r.width, 1 - (event.clientY - r.top) / r.height];
       pointerRadius = 0.14;
@@ -226,7 +241,7 @@ export default function InkHero({ imageSrc, imageAlt }: InkHeroProps) {
     if (!reduced) {
       trigger = ScrollTrigger.create({
         trigger: element,
-        start: 'top top+=72',
+        start: 'top top',
         end: 'bottom bottom',
         scrub: true,
         invalidateOnRefresh: true,
@@ -251,7 +266,16 @@ export default function InkHero({ imageSrc, imageAlt }: InkHeroProps) {
         if (shader2) gl.deleteShader(shader2);
       }
     };
-  }, [imageSrc, reduced, restart]);
+  }, [imageSrc, onRevealChange, reduced, restart]);
+
+  const scrollToReveal = () => {
+    const element = root.current;
+    const surface = stage.current;
+    if (!element || !surface) return;
+    const start = window.scrollY + element.getBoundingClientRect().top;
+    const travel = Math.max(0, element.offsetHeight - surface.offsetHeight);
+    window.scrollTo({ top: start + travel * .9, behavior: 'smooth' });
+  };
 
   return <section
     ref={root}
@@ -259,7 +283,7 @@ export default function InkHero({ imageSrc, imageAlt }: InkHeroProps) {
     data-ink-hero=""
     data-ink-station="paper"
     data-reduced-motion={String(reduced)}
-    style={{ height: reduced ? 'calc(100svh - 72px)' : 'calc(100svh - 72px + 125svh)' }}
+    style={{ height: reduced ? '100svh' : '225svh' }}
   >
     <div ref={stage} className="unmaking-hero-stage">
       <div className="unmaking-hero-paper" aria-hidden="true" />
@@ -273,26 +297,30 @@ export default function InkHero({ imageSrc, imageAlt }: InkHeroProps) {
       />
       <canvas ref={canvas} aria-hidden="true" className="unmaking-hero-canvas" style={{ opacity: ready ? 1 : 0 }} />
       <div className="unmaking-hero-scrim" aria-hidden="true" />
+      {!reduced && <button type="button" className="unmaking-scroll-cue" onClick={scrollToReveal} aria-label="Scroll to reveal The Unmaking">
+        <span className="unmaking-cue-caption">SCROLL TO REVEAL</span>
+        <span className="unmaking-cue-line" aria-hidden="true" />
+        <span className="unmaking-cue-circle" aria-hidden="true"><span /></span>
+      </button>}
       <div className="unmaking-hero-image-caption">A place once familiar. A memory in revision.</div>
 
       <div className="unmaking-hero-copy">
-        <p className="unmaking-hero-eyebrow">A DEMICORPSE NOVELLA <span aria-hidden="true">—</span> FICTION / 001</p>
         <h1><span>THE</span><span>UNMAKING</span></h1>
-        <p className="unmaking-hero-byline">by DemiCorpse</p>
+        <p className="unmaking-hero-byline">a novella by DemiCorpse</p>
         <div className="unmaking-hero-rule" aria-hidden="true" />
         <p className="unmaking-hero-summary">
           After her mother's death, Anna returns to a house full of ordinary things
           that no longer feel ordinary.
         </p>
         <div className="unmaking-hero-actions">
-          <SiteLink className="unmaking-button-primary" href="/the-unmaking/chapter-01">Preview the reader <span aria-hidden="true">↗</span></SiteLink>
-          <a className="unmaking-button-secondary" href="#unmaking-contents">Chapter index <span aria-hidden="true">↗</span></a>
+          <SiteLink className="unmaking-button-primary" href="/the-unmaking/chapter-01">Begin Reading <span aria-hidden="true">↗</span></SiteLink>
+          <a className="unmaking-button-secondary" href="#unmaking-contents">Chapter Index <span aria-hidden="true">↗</span></a>
         </div>
       </div>
 
       <div className="unmaking-hero-foot">
-        <span>AN ORIGINAL WORK / DEMICORPSE</span>
-        <span>SCROLL TO DEVELOP THE PRINT <span aria-hidden="true">↓</span></span>
+        <span>AN ORIGINAL NOVELLA</span>
+        <span>THE UNMAKING <span aria-hidden="true">✦</span> DEMICORPSE</span>
         <span>01 — 06</span>
       </div>
     </div>

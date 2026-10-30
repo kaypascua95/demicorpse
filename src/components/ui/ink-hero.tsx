@@ -59,9 +59,10 @@ interface InkHeroProps {
   imageAlt: string;
   onRevealChange?: (revealed: boolean) => void;
   skipReveal?: boolean;
+  primaryCta?: { label: string; href: string };
 }
 
-export default function InkHero({ imageSrc, imageAlt, onRevealChange, skipReveal = false }: InkHeroProps) {
+export default function InkHero({ imageSrc, imageAlt, onRevealChange, skipReveal = false, primaryCta = { label: 'Begin Reading', href: '/the-unmaking/chapter-01' } }: InkHeroProps) {
   const root = useRef<HTMLElement>(null);
   const stage = useRef<HTMLDivElement>(null);
   const canvas = useRef<HTMLCanvasElement>(null);
@@ -317,7 +318,7 @@ export default function InkHero({ imageSrc, imageAlt, onRevealChange, skipReveal
           that no longer feel ordinary.
         </p>
         <div className="unmaking-hero-actions">
-          <SiteLink className="unmaking-button-primary" href="/the-unmaking/chapter-01">Begin Reading <span aria-hidden="true">↗</span></SiteLink>
+          <SiteLink className="unmaking-button-primary" href={primaryCta.href}>{primaryCta.label} <span aria-hidden="true">↗</span></SiteLink>
           <a className="unmaking-button-secondary" href="#unmaking-contents">Chapter Index <span aria-hidden="true">↗</span></a>
         </div>
       </div>

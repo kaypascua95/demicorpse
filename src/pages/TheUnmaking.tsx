@@ -2,6 +2,7 @@ import { useCallback, useEffect, useLayoutEffect, useState } from 'react';
 import InkHero from '@/components/ui/ink-hero';
 import { SiteLink } from '@/lib/navigation';
 import { hasSeenUnmakingReveal, rememberUnmakingReveal, UNMAKING_CHAPTERS, UNMAKING_CONTENTS_HREF, UNMAKING_HERO_IMAGE } from '@/lib/unmaking';
+import { getLastRead, UNMAKING_RESUME_HREF, UNMAKING_READING_UPDATED, type UnmakingReadingPlace } from '@/lib/unmaking-reading';
 
 export function NovellaHeader({ reading = false, revealed = true }: { reading?: boolean; revealed?: boolean }) {
   return <header className={'unmaking-header' + (revealed ? ' is-revealed' : '')} aria-hidden={!revealed} inert={!revealed}>
@@ -21,6 +22,20 @@ export function NovellaHeader({ reading = false, revealed = true }: { reading?: 
 }
 
 export default function TheUnmaking() {
+  const [lastRead, setLastRead] = useState<UnmakingReadingPlace | null>(() => getLastRead());
+  useEffect(() => {
+    const update = () => setLastRead(getLastRead());
+    window.addEventListener('storage', update);
+    window.addEventListener(UNMAKING_READING_UPDATED, update);
+    return () => {
+      window.removeEventListener('storage', update);
+      window.removeEventListener(UNMAKING_READING_UPDATED, update);
+    };
+  }, []);
+  const resumeAvailable = Boolean(lastRead && lastRead.percent < 99);
+  const primaryCta = resumeAvailable
+    ? { label: 'Continue Reading', href: UNMAKING_RESUME_HREF }
+    : { label: 'Begin Reading', href: '/the-unmaking/chapter-01' };
   const returnToContents = new URLSearchParams(window.location.search).get('contents') === '1';
   const skipReveal = returnToContents || hasSeenUnmakingReveal();
   const [revealed, setRevealed] = useState(
@@ -53,7 +68,7 @@ export default function TheUnmaking() {
   return <div className="unmaking-site" id="unmaking-top">
     <a href="#unmaking-contents" className="unmaking-skip">Skip the introduction and view chapters</a>
     <NovellaHeader revealed={revealed} />
-    <InkHero imageSrc={UNMAKING_HERO_IMAGE} imageAlt="A dim, old hallway with a chair and a window" onRevealChange={onRevealChange} skipReveal={skipReveal} />
+    <InkHero imageSrc={UNMAKING_HERO_IMAGE} imageAlt="A dim, old hallway with a chair and a window" onRevealChange={onRevealChange} skipReveal={skipReveal} primaryCta={primaryCta} />
 
     <main id="unmaking-contents" className="unmaking-contents">
       <div className="unmaking-contents-heading">
@@ -70,11 +85,12 @@ export default function TheUnmaking() {
         <section className="unmaking-chapters" aria-labelledby="unmaking-index-title">
           <h2 id="unmaking-index-title">Table of <em>contents.</em></h2>
           <p className="unmaking-index-subtitle">Six chapters on grief, memory, and the shape of absence.</p>
+          {resumeAvailable && <SiteLink className="unmaking-resume-reading" href={UNMAKING_RESUME_HREF}>Continue Reading <span>Chapter I · {lastRead?.percent}% read</span> <span aria-hidden="true">↗</span></SiteLink>}
           <ol>
             {UNMAKING_CHAPTERS.map((chapter, index) => <li key={chapter.slug}>
               {index === 0 ? <SiteLink href={'/the-unmaking/' + chapter.slug} aria-label={'Read ' + chapter.title}>
                 <span className="unmaking-chapter-numeral">{chapter.roman}</span>
-                <span className="unmaking-chapter-title">{chapter.title}<small>Chapter I · Available to read</small></span>
+                <span className="unmaking-chapter-title">{chapter.title}<small>Chapter I · {resumeAvailable ? 'In progress' : 'Available to read'}</small></span>
                 <span className="unmaking-chapter-arrow" aria-hidden="true">↗</span>
               </SiteLink> : <div className="unmaking-unavailable-chapter" aria-label={chapter.title + ' — Coming Soon'}>
                 <span className="unmaking-chapter-numeral">{chapter.roman}</span>
@@ -90,7 +106,7 @@ export default function TheUnmaking() {
           <p>A psychological horror novella where the familiar becomes unsettling, and grief finds its way into the smallest rituals.</p>
           <div className="unmaking-note-rule" />
           <p className="unmaking-preview-status">Chapter I is available to read. Chapters II–VI are coming soon; their titles are provisional while the manuscript is revised.</p>
-          <SiteLink href="/the-unmaking/chapter-01">Begin Reading <span aria-hidden="true">↗</span></SiteLink>
+          <SiteLink href={primaryCta.href}>{primaryCta.label} <span aria-hidden="true">↗</span></SiteLink>
         </aside>
       </div>
       <footer className="unmaking-footer">

@@ -93,3 +93,20 @@ lands at the table of contents with the hero already fully revealed (no repeat
 animation). After first reveal, the same tab also remembers the reveal in
 `sessionStorage`, including browser Back and direct chapter visits; a fresh
 session still gets the cinematic first reveal. Reduced motion remains supported.
+
+### Reading progress and bookmarks
+
+Chapter I now has a fixed Skiper89-style circular progress indicator which
+tracks **only the chapter prose**, not the entire site. Click the ring for
+bookmark controls, or use the visible Save Bookmark control above the prose.
+Reading progress is recorded automatically (throttled) to browser
+`localStorage`. A manually chosen bookmark is kept separately so ordinary
+scrolling never overwrites it.
+
+Returning visitors see a Continue Reading action on the cover/index when an
+unfinished reading position exists. The reader restores a paragraph index and
+relative position on `?resume=1`, rather than assuming the same screen size.
+The data stays in the same browser/device only; private mode, blocked storage,
+or cleared site data can remove it. No authentication, CMS migration, external
+tracking service, or new npm package was needed: the supplied motion UI was
+adapted to the existing `framer-motion` dependency.

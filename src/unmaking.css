@@ -534,3 +534,145 @@
 .unmaking-hero-scrim {
   pointer-events: none !important;
 }
+
+/* Chapter progress and manual bookmarks: compact, scoped to the reader. */
+.unmaking-reader-tools {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  align-items: center;
+  gap: 9px 20px;
+  max-width: 690px;
+  margin: -5px auto 17px;
+  padding: 0 0 14px;
+  border-bottom: 1px solid #cbc3b6;
+}
+.unmaking-reader-tools button {
+  min-height: 42px;
+  border: none;
+  background: transparent;
+  padding: 8px 2px;
+  color: #723f38;
+  font: 10px/1.6 var(--unmaking-mono);
+  letter-spacing: .035em;
+  cursor: pointer;
+}
+.unmaking-reader-tools button:hover { text-decoration: underline; text-underline-offset: 4px; }
+.unmaking-reader-tools button > span { font-size: 16px; margin-right: 6px; }
+.unmaking-reader-notice {
+  min-height: 0;
+  margin: 0 auto;
+  max-width: 690px;
+  text-align: center;
+  color: #705546;
+  font: 10px/1.65 var(--unmaking-mono);
+}
+.unmaking-reader-notice:empty { display: none; }
+.unmaking-resume-reading {
+  display: flex; align-items: center; flex-wrap: wrap; justify-content: space-between;
+  gap: 8px; margin: 13px 0 22px; padding: 14px 15px;
+  border-block: 1px solid #a29b8d;
+  color: #723f38 !important;
+  font: 10px/1.6 var(--unmaking-mono);
+  letter-spacing: .08em;
+}
+.unmaking-resume-reading span:nth-child(1) { color: #716b60; }
+.unmaking-resume-reading:hover { background: #e0d6c4; }
+
+.unmaking-progress-widget {
+  position: fixed;
+  z-index: 55;
+  right: max(18px, env(safe-area-inset-right));
+  bottom: max(18px, env(safe-area-inset-bottom));
+  color: #24241f;
+  font-family: var(--unmaking-mono);
+}
+.unmaking-progress-affordance { position: relative; display: flex; align-items: center; justify-content: flex-end; }
+.unmaking-progress-tooltip {
+  position: absolute;
+  right: 58px; top: 50%;
+  transform: translateY(-50%);
+  width: max-content;
+  max-width: calc(100vw - 120px);
+  border: 1px solid #a99f91;
+  background: #e7dfd1;
+  padding: 7px 9px;
+  color: #665f54;
+  font: 10px/1.4 var(--unmaking-mono);
+  opacity: 0; pointer-events: none;
+  transition: opacity .18s ease;
+}
+.unmaking-progress-widget:hover .unmaking-progress-tooltip,
+.unmaking-progress-widget:focus-within .unmaking-progress-tooltip {
+  opacity: 1;
+}
+.unmaking-progress-button {
+  position: relative;
+  display: grid; place-items: center;
+  width: 52px; height: 52px;
+  border: 1px solid #a99f91;
+  border-radius: 16px;
+  background: rgba(232,225,213,.94);
+  color: #773f37;
+  box-shadow: 0 5px 24px #15151524;
+  backdrop-filter: blur(12px);
+  cursor: pointer;
+}
+.unmaking-progress-button:hover,
+.unmaking-progress-button.is-open { border-color: #773f37; background: #eee8dc; }
+.unmaking-progress-ring { display: block; position: absolute; width: 44px; height: 44px; }
+.unmaking-progress-value { position: relative; z-index: 2; font: 10px/1 var(--unmaking-mono); font-variant-numeric: tabular-nums; }
+.unmaking-progress-bookmark-dot {
+  position: absolute; top: 2px; right: 1px;
+  width: 7px; height: 7px;
+  border: 1px solid #eee7d9; border-radius: 50%;
+  background: #773f37;
+}
+.unmaking-progress-popup {
+  position: absolute;
+  right: 0; bottom: calc(100% + 12px);
+  width: min(280px, calc(100vw - 36px));
+  background: #e7dfd1;
+  border: 1px solid #a89f90;
+  box-shadow: 0 14px 40px #1010102a;
+  padding: 18px 18px 15px;
+  color: #24241f;
+}
+.unmaking-progress-popup[hidden] { display: none; }
+.unmaking-progress-eyebrow { color: #7c473f; font: 9px/1.5 var(--unmaking-mono); letter-spacing: .13em; }
+.unmaking-progress-heading {
+  margin: 10px 0 5px;
+  font: italic 400 29px/1 var(--unmaking-serif);
+}
+.unmaking-progress-description {
+  margin: 0 0 13px;
+  color: #666054;
+  font: 11px/1.55 var(--unmaking-mono);
+}
+.unmaking-progress-actions {
+  display: flex; flex-direction: column;
+  border-top: 1px solid #b5ab9c;
+}
+.unmaking-progress-actions button {
+  display: flex; justify-content: space-between; gap: 12px;
+  align-items: center;
+  min-height: 42px;
+  background: transparent;
+  border: 0; border-bottom: 1px solid #b5ab9c;
+  padding: 10px 1px;
+  text-align: left;
+  color: #2d2c28;
+  font: 11px/1.4 var(--unmaking-mono);
+  cursor: pointer;
+}
+.unmaking-progress-actions button:hover { color: #7c473f; }
+.unmaking-progress-actions button.unmaking-progress-remove { color: #795e53; }
+.unmaking-progress-actions button span { color: #7c473f; }
+@media(max-width:680px) {
+  .unmaking-reader-tools { justify-content: flex-start; gap: 6px 14px; margin-top: -3px; }
+  .unmaking-reader-tools button { font-size: 9px; }
+  .unmaking-progress-widget { right: 14px; bottom: max(14px, env(safe-area-inset-bottom)); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .unmaking-progress-tooltip, .unmaking-progress-button { transition: none; }
+}

@@ -129,3 +129,68 @@ test('scroll cue still develops the scene for first-time visitors', async ({ pag
   await page.getByRole('link', { name: /Begin Reading/ }).click();
   await expect(page).toHaveURL(/\/the-unmaking\/chapter-01$/);
 });
+
+test('reader ring is chapter-scoped and a manual bookmark survives reload', async ({ page }) => {
+  await stubHero(page);
+  await page.goto('/the-unmaking/chapter-01');
+  const story = page.locator('.unmaking-reader-manuscript');
+  const para = story.locator(':scope > p').nth(65);
+  await para.scrollIntoViewIfNeeded();
+  await expect(page.getByRole('button', { name: /Chapter reading progress/ })).toBeVisible();
+  await page.getByRole('button', { name: /Save Bookmark/ }).first().click();
+  const saved = await page.evaluate(() => JSON.parse(localStorage.getItem('demicorpse:unmaking:bookmark:v1') || 'null'));
+  expect(saved).toMatchObject({ version: 1, chapterSlug: 'chapter-01' });
+  expect(saved.paragraphIndex).toBeGreaterThan(0);
+  await page.reload();
+  await expect(page.getByRole('button', { name: /Return to bookmark/ }).first()).toBeVisible();
+  await page.getByRole('button', { name: /Return to bookmark/ }).first().click();
+  await expect.poll(async () => page.evaluate(() => {
+    const prose = document.querySelector('.unmaking-reader-manuscript')!;
+    const paragraphs = prose.querySelectorAll(':scope > p');
+    const saved = JSON.parse(localStorage.getItem('demicorpse:unmaking:bookmark:v1') || '{}');
+    const box = paragraphs[saved.paragraphIndex]?.getBoundingClientRect();
+    return box ? box.top < innerHeight && box.bottom > 0 : false;
+  })).toBe(true);
+});
+
+test('the landing page offers Continue Reading and restores chapter position', async ({ page }) => {
+  await stubHero(page);
+  await page.goto('/the-unmaking/chapter-01');
+  await page.locator('.unmaking-reader-manuscript > p').nth(45).scrollIntoViewIfNeeded();
+  await expect.poll(() => page.evaluate(() => {
+    const x = JSON.parse(localStorage.getItem('demicorpse:unmaking:last-read:v1') || 'null');
+    return x?.paragraphIndex ?? 0;
+  })).toBeGreaterThan(10);
+  await page.getByRole('link', { name: /Table of contents/ }).first().click();
+  await expect(page.locator('.unmaking-resume-reading')).toContainText('Continue Reading');
+  await expect(page.locator('.unmaking-ink-hero')).toHaveAttribute('data-skip-reveal', 'true');
+  await page.locator('.unmaking-resume-reading').click();
+  await expect(page).toHaveURL(/resume=1/);
+  await expect.poll(() => page.evaluate(() => {
+    const prose = document.querySelector('.unmaking-reader-manuscript');
+    const saved = JSON.parse(localStorage.getItem('demicorpse:unmaking:last-read:v1') || '{}');
+    const paragraph = prose?.querySelectorAll(':scope > p')[saved.paragraphIndex];
+    if (!paragraph) return false;
+    const rect = paragraph.getBoundingClientRect();
+    return rect.top < innerHeight && rect.bottom > 0;
+  }), { timeout: 8000 }).toBe(true);
+});
+
+test('bookmarks are separate from auto progress and only Chapter I has a progress ring', async ({ page }) => {
+  await stubHero(page);
+  await page.goto('/the-unmaking/chapter-01');
+  await page.locator('.unmaking-reader-manuscript > p').nth(24).scrollIntoViewIfNeeded();
+  await page.getByRole('button', { name: /Chapter reading progress/ }).click();
+  await expect(page.getByRole('button', { name: 'Save Bookmark', exact: true }).last()).toBeVisible();
+  await page.getByRole('button', { name: 'Save Bookmark', exact: true }).last().click();
+  const original = await page.evaluate(() => localStorage.getItem('demicorpse:unmaking:bookmark:v1'));
+  await page.locator('.unmaking-reader-manuscript > p').nth(90).scrollIntoViewIfNeeded();
+  await expect.poll(() => page.evaluate(() => JSON.parse(localStorage.getItem('demicorpse:unmaking:last-read:v1') || 'null')?.paragraphIndex ?? 0)).toBeGreaterThan(24);
+  expect(await page.evaluate(() => localStorage.getItem('demicorpse:unmaking:bookmark:v1'))).toBe(original);
+  await page.getByRole('button', { name: /Chapter reading progress/ }).click();
+  await page.getByRole('button', { name: 'Remove bookmark' }).click();
+  expect(await page.evaluate(() => localStorage.getItem('demicorpse:unmaking:bookmark:v1'))).toBeNull();
+  await page.goto('/the-unmaking/chapter-02');
+  await expect(page.locator('.unmaking-progress-widget')).toHaveCount(0);
+  await expect(page.getByText('COMING SOON', { exact: true })).toBeVisible();
+});

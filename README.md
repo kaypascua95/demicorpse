@@ -47,3 +47,22 @@ decision, test scope and recovery. Netlify builds the GitHub `main` branch with
 already in `netlify.toml`; these are safe to expose and cannot authorize writes.
 The database policies are the authority. Never replace the publishable key with a
 service-role or secret key.
+
+## The Unmaking (preview branch)
+
+The novella has a distinct branded entrance at `/the-unmaking/`, with a single
+GSAP ScrollTrigger-driven ink reveal, accessible static reduced-motion mode,
+six-part chapter index, and quiet reading templates at
+`/the-unmaking/chapter-01` through `chapter-06`.
+
+These are **layout previews, not published chapters**. The six titles reflect
+the working manuscript; no manuscript body text is shipped in this branch.
+A future step can connect approved chapter content to the existing owner-only CMS.
+The original `/demicorpse-logo.png` remains in the novella header; the main
+DemiCorpse entrance and other collections are unchanged.
+
+The hero uses Peter Herrmann's photograph from Unsplash, served via
+`images.unsplash.com`; Netlify CSP permits that one image domain. WebGL
+textures fall back to a regular image on unsupported devices, and the entire
+reveal becomes static when reduced motion is preferred. No Lenis instance or
+extra npm dependency is installed.

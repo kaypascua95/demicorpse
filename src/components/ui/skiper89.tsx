@@ -1,6 +1,8 @@
 import { useEffect, useState, type RefObject } from 'react';
 import { motion, useMotionValueEvent, useScroll, useTransform } from 'framer-motion';
 import { cn } from '@/lib/utils';
+import { SiteLink } from '@/lib/navigation';
+import { UNMAKING_CONTENTS_HREF } from '@/lib/unmaking';
 import type { UnmakingReadingPlace } from '@/lib/unmaking-reading';
 
 interface Skiper89Props {
@@ -45,6 +47,7 @@ export function Skiper89({
         </button>}
         {hasLastRead && <button type="button" onClick={() => { onResumeLatest(); setOpen(false); }}>Resume last read</button>}
         {bookmark && <button type="button" className="unmaking-progress-remove" onClick={() => { onRemoveBookmark(); setOpen(false); }}>Remove bookmark</button>}
+        <SiteLink href={UNMAKING_CONTENTS_HREF} className="unmaking-progress-index-link">Table of contents <span aria-hidden="true">↗</span></SiteLink>
       </div>
     </div>
     <div className="unmaking-progress-affordance">

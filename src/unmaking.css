@@ -653,7 +653,8 @@
   display: flex; flex-direction: column;
   border-top: 1px solid #b5ab9c;
 }
-.unmaking-progress-actions button {
+.unmaking-progress-actions button,
+.unmaking-progress-actions a {
   display: flex; justify-content: space-between; gap: 12px;
   align-items: center;
   min-height: 42px;
@@ -665,7 +666,8 @@
   font: 11px/1.4 var(--unmaking-mono);
   cursor: pointer;
 }
-.unmaking-progress-actions button:hover { color: #7c473f; }
+.unmaking-progress-actions button:hover,
+.unmaking-progress-actions a:hover { color: #7c473f; }
 .unmaking-progress-actions button.unmaking-progress-remove { color: #795e53; }
 .unmaking-progress-actions button span { color: #7c473f; }
 @media(max-width:680px) {

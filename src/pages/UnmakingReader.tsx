@@ -54,6 +54,13 @@ export default function UnmakingReader({ slug }: { slug: string }) {
       }
       const place = captureReadingPlace(prose);
       if (!place) return;
+      // Keep automatic progress at the farthest reading point. Returning to
+      // the top to use navigation must not overwrite the reader's place.
+      const previous = lastScroll.current ?? getLastRead();
+      if (previous && (
+        place.percent < previous.percent ||
+        (place.percent === previous.percent && place.paragraphIndex < previous.paragraphIndex)
+      )) return;
       lastScroll.current = place;
       // Delay disk writes while the reader is scrolling, but never change the
       // separately saved manual bookmark.

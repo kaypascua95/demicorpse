@@ -137,7 +137,8 @@ test('reader ring is chapter-scoped and a manual bookmark survives reload', asyn
   const para = story.locator(':scope > p').nth(65);
   await para.scrollIntoViewIfNeeded();
   await expect(page.getByRole('button', { name: /Chapter reading progress/ })).toBeVisible();
-  await page.getByRole('button', { name: /Save Bookmark/ }).first().click();
+  await page.getByRole('button', { name: /Chapter reading progress/ }).click();
+  await page.locator('.unmaking-progress-popup').getByRole('button', { name: 'Save Bookmark' }).click();
   const saved = await page.evaluate(() => JSON.parse(localStorage.getItem('demicorpse:unmaking:bookmark:v1') || 'null'));
   expect(saved).toMatchObject({ version: 1, chapterSlug: 'chapter-01' });
   expect(saved.paragraphIndex).toBeGreaterThan(0);
@@ -161,7 +162,8 @@ test('the landing page offers Continue Reading and restores chapter position', a
     const x = JSON.parse(localStorage.getItem('demicorpse:unmaking:last-read:v1') || 'null');
     return x?.paragraphIndex ?? 0;
   })).toBeGreaterThan(10);
-  await page.getByRole('link', { name: /Table of contents/ }).first().click();
+  await page.getByRole('button', { name: /Chapter reading progress/ }).click();
+  await page.locator('.unmaking-progress-popup').getByRole('link', { name: /Table of contents/ }).click();
   await expect(page.locator('.unmaking-resume-reading')).toContainText('Continue Reading');
   await expect(page.locator('.unmaking-ink-hero')).toHaveAttribute('data-skip-reveal', 'true');
   await page.locator('.unmaking-resume-reading').click();

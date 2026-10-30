@@ -88,7 +88,7 @@ test('reduced motion shows a complete, readable introduction', async ({ browser 
   await expect(page.locator('.unmaking-ink-hero')).toHaveAttribute('data-reduced-motion', 'true');
   await expect(page.locator('.unmaking-scroll-cue')).toHaveCount(0);
   await expect(page.locator('.unmaking-header')).toHaveAttribute('aria-hidden', 'false');
-  await expect(page.getByRole('link', { name: /Begin Reading/ })).toBeVisible();
+  await expect(page.locator('.unmaking-hero-actions').getByRole('link', { name: /Begin Reading/ })).toBeVisible();
   await context.close();
 });
 
@@ -116,6 +116,8 @@ test('main navigation promotes The Unmaking and preserves LIKAS in More', async 
   await page.getByRole('button', { name: 'Open menu' }).click();
   await expect(page.locator('.more-dropdown').getByRole('link', { name: /LIKAS/ })).toHaveAttribute('href', '/likas/');
   await expect(page.locator('.more-dropdown').getByRole('link', { name: /THE UNMAKING/ })).toHaveCount(0);
+  await page.getByRole('button', { name: 'Close menu' }).click();
+  await expect(page.locator('.more-dropdown')).toHaveCount(0);
   await novellaLink.click();
   await expect(page.locator('.unmaking-header')).toHaveAttribute('aria-hidden', 'true');
 });
@@ -126,7 +128,7 @@ test('scroll cue still develops the scene for first-time visitors', async ({ pag
   await page.getByRole('button', { name: 'Scroll to reveal The Unmaking' }).click();
   await expect.poll(async () => page.locator('.unmaking-header').getAttribute('aria-hidden'), { timeout: 15000 }).toBe('false');
   await expect(page.locator('.unmaking-scroll-cue')).toBeHidden();
-  await page.getByRole('link', { name: /Begin Reading/ }).click();
+  await page.locator('.unmaking-hero-actions').getByRole('link', { name: /Begin Reading/ }).click();
   await expect(page).toHaveURL(/\/the-unmaking\/chapter-01$/);
 });
 

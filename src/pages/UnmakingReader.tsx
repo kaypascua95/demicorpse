@@ -87,6 +87,9 @@ export default function UnmakingReader({ slug }: { slug: string }) {
       }
       readyToTrack.current = true;
       if (wantsResume) active = true;
+      // If the visitor reached the chapter while web fonts were settling,
+      // capture their first scroll instead of waiting for a second gesture.
+      onScroll();
     };
     // Fonts can change line wraps and paragraph heights. Position after they
     // settle so the same paragraph is returned at all reading widths.

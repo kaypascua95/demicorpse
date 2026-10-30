@@ -52,10 +52,22 @@ test('returning from Chapter I goes straight to the revealed table of contents w
   await expect.poll(() => page.locator('#unmaking-contents').evaluate(el =>
     Math.abs(el.getBoundingClientRect().top - 72)), { timeout: 8000 }).toBeLessThan(15);
   await expect(page.locator('.unmaking-chapters li')).toHaveCount(6);
-  // Browser Back from the reader should likewise preserve the revealed state.
+  // The chapter page remains readable on history navigation.
   await page.goBack();
+  await expect(page.getByRole('heading', { name: 'A Place at the Table' })).toBeVisible();
+  await page.getByRole('link', { name: /Table of contents/ }).first().click();
+  await expect(page.locator('.unmaking-ink-hero')).toHaveAttribute('data-skip-reveal', 'true');
+});
+
+test('browser Back also returns to a fully revealed landing page', async ({ page }) => {
+  await stubHero(page);
+  await page.goto('/the-unmaking/');
+  await page.getByRole('link', { name: 'Read A Place at the Table' }).click();
+  await expect(page).toHaveURL(/\/the-unmaking\/chapter-01$/);
   await page.goBack();
   await expect(page.locator('.unmaking-ink-hero')).toHaveAttribute('data-skip-reveal', 'true');
+  await expect(page.locator('.unmaking-header')).toHaveAttribute('aria-hidden', 'false');
+  await expect(page.locator('.unmaking-scroll-cue')).toHaveCount(0);
 });
 
 test('other chapter routes clearly display Coming Soon and never expose draft manuscript', async ({ page }) => {

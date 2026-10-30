@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useLayoutEffect, useState } from 'react';
 import InkHero from '@/components/ui/ink-hero';
 import { SiteLink } from '@/lib/navigation';
 import { UNMAKING_CHAPTERS, UNMAKING_HERO_IMAGE } from '@/lib/unmaking';
@@ -26,6 +26,11 @@ export default function TheUnmaking() {
   );
   const onRevealChange = useCallback((value: boolean) => {
     setRevealed(previous => previous === value ? previous : value);
+  }, []);
+  // Entering from a scrolled Journal page must start at the blank first frame,
+  // even though the rest of DemiCorpse normally uses smooth scrolling.
+  useLayoutEffect(() => {
+    window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
   }, []);
   useEffect(() => {
     const previous = document.title;

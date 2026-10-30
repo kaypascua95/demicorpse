@@ -47,3 +47,66 @@ decision, test scope and recovery. Netlify builds the GitHub `main` branch with
 already in `netlify.toml`; these are safe to expose and cannot authorize writes.
 The database policies are the authority. Never replace the publishable key with a
 service-role or secret key.
+
+## The Unmaking (preview branch)
+
+The novella has a distinct branded entrance at `/the-unmaking/`, with a single
+GSAP ScrollTrigger-driven ink reveal, accessible static reduced-motion mode,
+six-part chapter index, and quiet reading templates at
+`/the-unmaking/chapter-01` through `chapter-06`.
+
+These are **layout previews, not published chapters**. The six titles reflect
+the working manuscript; no manuscript body text is shipped in this branch.
+A future step can connect approved chapter content to the existing owner-only CMS.
+The original `/demicorpse-logo.png` remains in the novella header; the main
+DemiCorpse entrance and other collections are unchanged.
+
+The hero uses Peter Herrmann's photograph from Unsplash, served via
+`images.unsplash.com`; Netlify CSP permits that one image domain. WebGL
+textures fall back to a regular image on unsupported devices, and the entire
+reveal becomes static when reduced motion is preferred. No Lenis instance or
+extra npm dependency is installed.
+
+### October 2026 preview revision
+
+The main site's top-level LIKAS link is replaced with The Unmaking; LIKAS is
+still available under the More menu. The novella entrance starts as a blank
+black stage with an animated, keyboard-activatable **Scroll to Reveal** cue.
+The branded novella header stays hidden until the scene has developed.
+The byline and actions now read **a novella by DemiCorpse**, **Begin Reading**,
+and **Chapter Index**. The index includes an original self-contained SVG cover
+at `public/the-unmaking-cover.svg`; this is a cover **study**, not a finalized
+print-ready paperback wrap. Reduced-motion visitors see the complete scene
+and working navigation immediately.
+
+### Chapter I and chapter index (preview branch)
+
+The user-approved **concise Chapter I: A Place at the Table** lives in
+`src/content/unmaking-chapter-01.md` and is rendered by the public
+`/the-unmaking/chapter-01` reader. Because the chapter is a checked-in Markdown
+file, **text changes currently require a code update and new preview build**.
+The Supabase CMS is unchanged. Chapters II–VI display **Coming Soon** in the
+index and on direct URLs, without exposing draft content.
+
+The index return link is `/the-unmaking/?contents=1`. Returning from a chapter
+lands at the table of contents with the hero already fully revealed (no repeat
+animation). After first reveal, the same tab also remembers the reveal in
+`sessionStorage`, including browser Back and direct chapter visits; a fresh
+session still gets the cinematic first reveal. Reduced motion remains supported.
+
+### Reading progress and bookmarks
+
+Chapter I now has a fixed Skiper89-style circular progress indicator which
+tracks **only the chapter prose**, not the entire site. Click the ring for
+bookmark controls, or use the visible Save Bookmark control above the prose.
+Reading progress is recorded automatically (throttled) to browser
+`localStorage`. A manually chosen bookmark is kept separately so ordinary
+scrolling never overwrites it.
+
+Returning visitors see a Continue Reading action on the cover/index when an
+unfinished reading position exists. The reader restores a paragraph index and
+relative position on `?resume=1`, rather than assuming the same screen size.
+The data stays in the same browser/device only; private mode, blocked storage,
+or cleared site data can remove it. No authentication, CMS migration, external
+tracking service, or new npm package was needed: the supplied motion UI was
+adapted to the existing `framer-motion` dependency.

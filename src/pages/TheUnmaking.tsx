@@ -30,7 +30,7 @@ export default function TheUnmaking() {
   return <div className="unmaking-site" id="unmaking-top">
     <a href="#unmaking-contents" className="unmaking-skip">Skip the introduction and view chapters</a>
     <NovellaHeader />
-    <InkHero imageSrc={UNMAKING_HERO_IMAGE} imageAlt="Weathered open doors lead to a quiet, empty room with a distant window" />
+    <InkHero imageSrc={UNMAKING_HERO_IMAGE} imageAlt="A dim, old hallway with a chair and a window" />
 
     <main id="unmaking-contents" className="unmaking-contents">
       <div className="unmaking-contents-heading">
@@ -41,7 +41,7 @@ export default function TheUnmaking() {
         <aside className="unmaking-index-art" aria-label="Novella introduction">
           <div className="unmaking-index-ornament" aria-hidden="true">D <span>✦</span> C</div>
           <p>“It's easier to make tea for two.”</p>
-          <span>FROM THE WORKING MANUSCRIPT</span>
+          <span>ILLUSTRATIVE EDITORIAL LINE</span>
         </aside>
         <section className="unmaking-chapters" aria-labelledby="unmaking-index-title">
           <h2 id="unmaking-index-title">Table of <em>contents.</em></h2>
@@ -68,7 +68,7 @@ export default function TheUnmaking() {
       <footer className="unmaking-footer">
         <span>DEMICORPSE / THE UNMAKING</span>
         <SiteLink href="/?enter=1">Return to the archive <span aria-hidden="true">↗</span></SiteLink>
-        <a href="https://unsplash.com/photos/a-long-hallway-with-windows-leading-to-another-room-zRv4K6EOwog" target="_blank" rel="noopener noreferrer">Hero photograph: Peter Herrmann / Unsplash</a>
+        <a href="https://unsplash.com/photos/a-dark-hallway-with-a-chair-and-a-window-o6a3gor7T9s" target="_blank" rel="noopener noreferrer">Hero photograph: Peter Herrmann / Unsplash</a>
       </footer>
     </main>
   </div>;

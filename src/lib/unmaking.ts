@@ -1,5 +1,5 @@
 /**
- * Editorial structure only. The six titles reflect the working manuscript;
+ * Editorial structure only. The six provisional titles are editorial placeholders;
  * the prose is deliberately NOT stored or published by this preview.
  */
 export interface UnmakingChapter {
@@ -18,7 +18,7 @@ export const UNMAKING_CHAPTERS: UnmakingChapter[] = [
 ];
 
 export const UNMAKING_HERO_IMAGE =
-  'https://images.unsplash.com/photo-1766303046126-96e6dcf50929?auto=format&fit=crop&w=2200&q=82';
+  'https://images.unsplash.com/photo-1718286111463-a2bdc0ea91a7?auto=format&fit=crop&w=2200&q=82';
 
 export function getUnmakingChapter(slug: string): UnmakingChapter | undefined {
   return UNMAKING_CHAPTERS.find(chapter => chapter.slug === slug);

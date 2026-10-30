@@ -109,12 +109,14 @@ test('mobile reader and contents contain the layout without horizontal overflow'
 test('main navigation promotes The Unmaking and preserves LIKAS in More', async ({ page }) => {
   await stubHero(page);
   await page.goto('/journal/');
-  await expect(page.locator('.primary-nav').getByRole('button', { name: 'THE UNMAKING' })).toBeVisible();
-  await expect(page.locator('.primary-nav').getByRole('button', { name: 'LIKAS' })).toHaveCount(0);
+  const header = page.locator('.global-header');
+  const novellaLink = header.getByRole('button', { name: 'THE UNMAKING' });
+  await expect(novellaLink).toBeVisible();
+  await expect(header.getByRole('button', { name: 'LIKAS' })).toHaveCount(0);
   await page.getByRole('button', { name: 'Open menu' }).click();
   await expect(page.locator('.more-dropdown').getByRole('link', { name: /LIKAS/ })).toHaveAttribute('href', '/likas/');
   await expect(page.locator('.more-dropdown').getByRole('link', { name: /THE UNMAKING/ })).toHaveCount(0);
-  await page.locator('.primary-nav').getByRole('button', { name: 'THE UNMAKING' }).click();
+  await novellaLink.click();
   await expect(page.locator('.unmaking-header')).toHaveAttribute('aria-hidden', 'true');
 });
 

@@ -275,7 +275,9 @@ export default function InkHero({ imageSrc, imageAlt, onRevealChange, skipReveal
     if (!element || !surface) return;
     const start = window.scrollY + element.getBoundingClientRect().top;
     const travel = Math.max(0, element.offsetHeight - surface.offsetHeight);
-    window.scrollTo({ top: start + travel * .9, behavior: 'smooth' });
+    // A click finishes the reveal immediately; manual wheel/touch scrolling
+    // still runs the complete ink animation. This avoids a moving CTA target.
+    window.scrollTo({ top: start + travel * .94, behavior: 'instant' });
   };
 
   return <section

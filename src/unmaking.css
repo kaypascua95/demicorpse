@@ -526,3 +526,11 @@
     min-height: 74px;
   }
 }
+
+/* The rendered photograph is decorative and must not swallow taps on the CTA. */
+.unmaking-hero-paper,
+.unmaking-hero-fallback,
+.unmaking-hero-canvas,
+.unmaking-hero-scrim {
+  pointer-events: none !important;
+}

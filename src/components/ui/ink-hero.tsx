@@ -58,9 +58,10 @@ interface InkHeroProps {
   imageSrc: string;
   imageAlt: string;
   onRevealChange?: (revealed: boolean) => void;
+  skipReveal?: boolean;
 }
 
-export default function InkHero({ imageSrc, imageAlt, onRevealChange }: InkHeroProps) {
+export default function InkHero({ imageSrc, imageAlt, onRevealChange, skipReveal = false }: InkHeroProps) {
   const root = useRef<HTMLElement>(null);
   const stage = useRef<HTMLDivElement>(null);
   const canvas = useRef<HTMLCanvasElement>(null);
@@ -84,8 +85,8 @@ export default function InkHero({ imageSrc, imageAlt, onRevealChange }: InkHeroP
     if (!element || !surface || !target) return;
 
     gsap.registerPlugin(ScrollTrigger);
-    let current = reduced ? 1 : 0;
-    let developed = reduced ? 1 : 0;
+    let current = (reduced || skipReveal) ? 1 : 0;
+    let developed = (reduced || skipReveal) ? 1 : 0;
     let lastHeaderVisible: boolean | null = null;
     let pointer: [number, number] = [-100, -100];
     let pointerRadius = 0;
@@ -169,7 +170,7 @@ export default function InkHero({ imageSrc, imageAlt, onRevealChange }: InkHeroP
 
     const clamp = (value: number) => Math.min(1, Math.max(0, value));
     const paint = (value: number) => {
-      current = reduced ? 1 : clamp(value);
+      current = (reduced || skipReveal) ? 1 : clamp(value);
       // A genuinely empty opening gives way to ink, then to text and navigation.
       developed = clamp((current - .12) / .72);
       const copy = clamp((current - .52) / .20);
@@ -181,7 +182,7 @@ export default function InkHero({ imageSrc, imageAlt, onRevealChange }: InkHeroP
       element.style.setProperty('--ink-cta', String(actions));
       element.style.setProperty('--ink-cue', String(cue));
       element.dataset.inkStation = current < .22 ? 'paper' : current < .72 ? 'wash' : 'print';
-      const showHeader = reduced || current >= .74;
+      const showHeader = reduced || skipReveal || current >= .74;
       if (showHeader !== lastHeaderVisible) {
         lastHeaderVisible = showHeader;
         onRevealChange?.(showHeader);
@@ -237,8 +238,8 @@ export default function InkHero({ imageSrc, imageAlt, onRevealChange }: InkHeroP
     surface.addEventListener('pointermove', onMove, { passive: true });
     surface.addEventListener('pointerleave', onLeave, { passive: true });
 
-    paint(reduced ? 1 : 0);
-    if (!reduced) {
+    paint((reduced || skipReveal) ? 1 : 0);
+    if (!reduced && !skipReveal) {
       trigger = ScrollTrigger.create({
         trigger: element,
         start: 'top top',
@@ -266,7 +267,7 @@ export default function InkHero({ imageSrc, imageAlt, onRevealChange }: InkHeroP
         if (shader2) gl.deleteShader(shader2);
       }
     };
-  }, [imageSrc, onRevealChange, reduced, restart]);
+  }, [imageSrc, onRevealChange, reduced, restart, skipReveal]);
 
   const scrollToReveal = () => {
     const element = root.current;
@@ -283,7 +284,8 @@ export default function InkHero({ imageSrc, imageAlt, onRevealChange }: InkHeroP
     data-ink-hero=""
     data-ink-station="paper"
     data-reduced-motion={String(reduced)}
-    style={{ height: reduced ? '100svh' : '225svh' }}
+    data-skip-reveal={String(skipReveal)}
+    style={{ height: (reduced || skipReveal) ? '100svh' : '225svh' }}
   >
     <div ref={stage} className="unmaking-hero-stage">
       <div className="unmaking-hero-paper" aria-hidden="true" />
@@ -297,7 +299,7 @@ export default function InkHero({ imageSrc, imageAlt, onRevealChange }: InkHeroP
       />
       <canvas ref={canvas} aria-hidden="true" className="unmaking-hero-canvas" style={{ opacity: ready ? 1 : 0 }} />
       <div className="unmaking-hero-scrim" aria-hidden="true" />
-      {!reduced && <button type="button" className="unmaking-scroll-cue" onClick={scrollToReveal} aria-label="Scroll to reveal The Unmaking">
+      {!reduced && !skipReveal && <button type="button" className="unmaking-scroll-cue" onClick={scrollToReveal} aria-label="Scroll to reveal The Unmaking">
         <span className="unmaking-cue-caption">SCROLL TO REVEAL</span>
         <span className="unmaking-cue-line" aria-hidden="true" />
         <span className="unmaking-cue-circle" aria-hidden="true"><span /></span>

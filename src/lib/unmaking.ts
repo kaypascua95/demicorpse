@@ -17,6 +17,18 @@ export const UNMAKING_CHAPTERS: UnmakingChapter[] = [
   { slug: 'chapter-06', roman: 'VI', title: 'For Two' },
 ];
 
+export const UNMAKING_CONTENTS_HREF = '/the-unmaking/?contents=1';
+const REVEAL_STORAGE_KEY = 'demicorpse:unmaking-reveal-seen';
+
+export function hasSeenUnmakingReveal(): boolean {
+  try { return sessionStorage.getItem(REVEAL_STORAGE_KEY) === '1'; }
+  catch { return false; }
+}
+export function rememberUnmakingReveal(): void {
+  try { sessionStorage.setItem(REVEAL_STORAGE_KEY, '1'); }
+  catch { /* Reading still works when session storage is disabled. */ }
+}
+
 export const UNMAKING_HERO_IMAGE =
   'https://images.unsplash.com/photo-1718286111463-a2bdc0ea91a7?auto=format&fit=crop&w=2200&q=82';
 

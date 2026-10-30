@@ -78,3 +78,18 @@ and **Chapter Index**. The index includes an original self-contained SVG cover
 at `public/the-unmaking-cover.svg`; this is a cover **study**, not a finalized
 print-ready paperback wrap. Reduced-motion visitors see the complete scene
 and working navigation immediately.
+
+### Chapter I and chapter index (preview branch)
+
+The user-approved **concise Chapter I: A Place at the Table** lives in
+`src/content/unmaking-chapter-01.md` and is rendered by the public
+`/the-unmaking/chapter-01` reader. Because the chapter is a checked-in Markdown
+file, **text changes currently require a code update and new preview build**.
+The Supabase CMS is unchanged. Chapters II–VI display **Coming Soon** in the
+index and on direct URLs, without exposing draft content.
+
+The index return link is `/the-unmaking/?contents=1`. Returning from a chapter
+lands at the table of contents with the hero already fully revealed (no repeat
+animation). After first reveal, the same tab also remembers the reveal in
+`sessionStorage`, including browser Back and direct chapter visits; a fresh
+session still gets the cinematic first reveal. Reduced motion remains supported.
